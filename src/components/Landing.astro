@@ -241,7 +241,7 @@ const icons: Record<string, string> = {
         ))}
       </dl>
       <p class="reveal mt-4 text-sm text-ink/60">{t.specs.note}</p>
-      <a href={m('/ficha-couva-6x6.pdf')} target="_blank" rel="noopener" class="btn-dark reveal mt-6">{t.specs.dl}</a>
+      <button type="button" class="btn-dark reveal mt-6" data-open-download>{t.specs.dl}</button>
     </div>
     <div class="reveal">
       <img src={m('/media/plano.jpg')} alt="Plano COUVA 6×6" loading="lazy" class="w-full rounded-3xl bg-white object-contain p-4 shadow-soft ring-1 ring-ink/5" />
@@ -249,26 +249,46 @@ const icons: Record<string, string> = {
   </div>
 </section>
 
-<!-- GALLERY -->
-<section class="bg-cream pb-20 sm:pb-28">
+<!-- GALLERY (pestañas: amueblada / obra / instalada) -->
+<section id="galeria" class="bg-cream pb-20 sm:pb-28">
   <div class="wrap">
     <h2 class="reveal text-3xl font-bold sm:text-4xl">{t.gallery.title}</h2>
     <p class="reveal mt-3 text-lg text-ink/70">{t.gallery.sub}</p>
-    <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {[
-        ['/media/exterior-frontal.jpeg','Exterior frontal'],
-        ['/media/exterior-derecha.jpeg','Exterior lateral'],
-        ['/media/exterior-izquierda.jpeg','Exterior lateral'],
-        ['/media/interior.jpeg','Interior'],
-        ['/media/lifestyle.jpeg','Ambiente'],
-        ['/media/render-couva.png','Ficha visual'],
-      ].map(([src,alt])=> (
-        <img src={m(src)} alt={alt} loading="lazy" class="reveal aspect-[4/3] w-full rounded-2xl object-cover shadow-soft ring-1 ring-ink/5" />
+
+    <div class="reveal mt-8 flex flex-wrap gap-2" role="tablist">
+      {[['amueblada', t.gallery.tabAmueblada], ['obra', t.gallery.tabObra], ['instalada', t.gallery.tabInstalada]].map(([key, label], i) => (
+        <button type="button" class:list={["gal-tab rounded-full px-5 py-2 text-sm font-semibold transition", i === 0 ? "bg-ink text-cream" : "bg-white text-ink ring-1 ring-ink/10 hover:bg-sand/40"]} data-tab={key} aria-selected={i === 0 ? 'true' : 'false'}>{label}</button>
       ))}
     </div>
-    <div class="mt-6 grid gap-4 sm:grid-cols-2">
-      <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster={m('/media/exterior-frontal.jpeg')}><source src={m('/media/casa-2.mp4')} type="video/mp4" /></video>
-      <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster={m('/media/interior.jpeg')}><source src={m('/media/casa-3.mp4')} type="video/mp4" /></video>
+
+    <div class="gal-panel mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-panel="amueblada">
+      {t.gallery.amueblada.map((g) => (<img src={m(g.src)} alt={g.alt} loading="lazy" class="aspect-[4/3] w-full rounded-2xl object-cover shadow-soft ring-1 ring-ink/5" />))}
+    </div>
+    <div class="gal-panel mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-panel="obra" style="display:none">
+      {t.gallery.obra.map((g) => (<img src={m(g.src)} alt={g.alt} loading="lazy" class="aspect-[4/3] w-full rounded-2xl object-cover shadow-soft ring-1 ring-ink/5" />))}
+    </div>
+    <div class="gal-panel mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-panel="instalada" style="display:none">
+      {t.gallery.instalada.map((g) => (<img src={m(g.src)} alt={g.alt} loading="lazy" class="aspect-[4/3] w-full rounded-2xl object-cover shadow-soft ring-1 ring-ink/5" />))}
+    </div>
+
+    <h3 class="reveal mt-12 text-xl font-bold">{t.gallery.videosTitle}</h3>
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      {t.gallery.videos.map((v) => (
+        <figure class="reveal">
+          <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster={m(v.poster)}><source src={m(v.src)} type="video/mp4" /></video>
+          <figcaption class="mt-2 text-sm font-medium text-ink/70">{v.label}</figcaption>
+        </figure>
+      ))}
+    </div>
+
+    <!-- CTA descarga (gateada) -->
+    <div class="reveal mt-12 flex flex-col items-center justify-between gap-5 rounded-2xl border border-gold/40 bg-gold/10 p-6 sm:flex-row">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-golddk">{t.download.eyebrow}</p>
+        <h3 class="mt-1 text-xl font-bold text-ink">{t.download.title}</h3>
+        <p class="mt-1 text-sm text-ink/70">{t.download.sub}</p>
+      </div>
+      <button type="button" class="btn-gold shrink-0" data-open-download>{t.download.btn}</button>
     </div>
   </div>
 </section>
@@ -482,8 +502,8 @@ const icons: Record<string, string> = {
     <div>
       <h2 class="reveal text-3xl font-bold sm:text-4xl">{t.leadForm.title}</h2>
       <p class="reveal mt-4 text-lg text-ink/70">{t.leadForm.sub}</p>
-      <div class="reveal mt-8 rounded-2xl bg-white p-6 shadow-soft ring-1 ring-ink/5">
-        <img src={m('/media/render-couva.png')} alt={t.meta.ogAlt} loading="lazy" class="mx-auto max-h-80 w-auto object-contain" />
+      <div class="reveal mt-8 overflow-hidden rounded-2xl shadow-soft ring-1 ring-ink/5">
+        <img src={m('/media/interior/sala.jpg')} alt={t.meta.ogAlt} loading="lazy" class="aspect-[4/3] w-full object-cover" />
       </div>
     </div>
     <div class="reveal card">
@@ -577,6 +597,29 @@ const icons: Record<string, string> = {
   </div>
 </footer>
 
+<!-- MODAL DESCARGA (gateado: solo el catálogo) -->
+<div id="download-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-ink/70 p-4 backdrop-blur-sm" style="display:none">
+  <div class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-soft" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+    <button type="button" class="absolute right-4 top-4 text-ink/40 hover:text-ink" data-close-download aria-label={t.download.close}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+    </button>
+    <h3 id="dl-title" class="text-xl font-bold text-ink">{t.download.modalTitle}</h3>
+    <p class="mt-2 text-sm text-ink/70">{t.download.modalSub}</p>
+    <form id="descarga-form" class="mt-5 space-y-4" data-download={m('/downloads/catalogo-couva-pardesantos.pdf')} data-success-msg={t.download.success}>
+      <input type="text" name="company" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+      <div><label class="label" for="dl-nombre">{t.leadForm.f_name}</label><input required id="dl-nombre" name="nombre" class="field" /></div>
+      <div><label class="label" for="dl-email">{t.leadForm.f_email}</label><input required type="email" id="dl-email" name="email" class="field" /></div>
+      <div><label class="label" for="dl-telefono">{t.leadForm.f_phone}</label><input required id="dl-telefono" name="telefono" class="field" /></div>
+      <label class="flex items-start gap-2 text-sm text-ink/70">
+        <input required type="checkbox" name="consentimiento" class="mt-1" />
+        <span>{t.leadForm.consent} <a href={privacyHref} class="underline">{t.footer.privacy}</a></span>
+      </label>
+      <button type="submit" class="btn-gold w-full">{t.download.submit}</button>
+      <p class="form-status text-sm"></p>
+    </form>
+  </div>
+</div>
+
 <script define:vars={{ WEBHOOK, lang, okMsg: t.leadForm.ok, errMsg: t.leadForm.err, sending: t.leadForm.sending }}>
   // --- Nav solidify on scroll ---
   const nav = document.getElementById('nav');
@@ -636,7 +679,13 @@ const icons: Record<string, string> = {
       try {
         const res = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         if (!res.ok) throw new Error(res.status);
-        status.style.color = '#0F7A4F'; status.textContent = okMsg; form.reset();
+        status.style.color = '#0F7A4F'; status.textContent = form.dataset.successMsg || okMsg; form.reset();
+        // Descarga gateada: al enviar, dispara el PDF
+        if (form.dataset.download) {
+          const a = document.createElement('a');
+          a.href = form.dataset.download; a.setAttribute('download', ''); a.target = '_blank';
+          document.body.appendChild(a); a.click(); a.remove();
+        }
       } catch (err) {
         status.style.color = '#B4442E'; status.textContent = errMsg;
       } finally {
@@ -647,4 +696,35 @@ const icons: Record<string, string> = {
   bindForm('lead-form', 'lead');
   bindForm('referral-form', 'referral');
   bindForm('configurador-form', 'configurador');
+  bindForm('descarga-form', 'descarga');
+
+  // --- Galería con pestañas ---
+  const tabs = document.querySelectorAll('.gal-tab');
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const key = tab.getAttribute('data-tab');
+      tabs.forEach((t2) => {
+        const active = t2 === tab;
+        t2.setAttribute('aria-selected', active ? 'true' : 'false');
+        t2.classList.toggle('bg-ink', active);
+        t2.classList.toggle('text-cream', active);
+        t2.classList.toggle('bg-white', !active);
+        t2.classList.toggle('text-ink', !active);
+        t2.classList.toggle('ring-1', !active);
+        t2.classList.toggle('ring-ink/10', !active);
+      });
+      document.querySelectorAll('.gal-panel').forEach((p) => {
+        p.style.display = p.getAttribute('data-panel') === key ? 'grid' : 'none';
+      });
+    });
+  });
+
+  // --- Modal de descarga ---
+  const modal = document.getElementById('download-modal');
+  const openModal = () => { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; };
+  const closeModal = () => { modal.style.display = 'none'; document.body.style.overflow = ''; };
+  document.querySelectorAll('[data-open-download]').forEach((b) => b.addEventListener('click', openModal));
+  document.querySelectorAll('[data-close-download]').forEach((b) => b.addEventListener('click', closeModal));
+  modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 </script>
