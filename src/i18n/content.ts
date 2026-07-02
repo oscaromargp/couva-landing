@@ -215,8 +215,8 @@ export const content = {
       eyebrow: 'INVERSIONISTAS COMO TÚ',
       title: 'Lo que dicen quienes ya invirtieron',
       items: [
-        { quote: 'Puse la COUVA en mi lote en La Punta y en menos de un mes ya la tenía publicada en Airbnb. El precio cerrado fue lo que me decidió: cero sorpresas.', name: 'Mariana R.', role: 'Anfitriona Airbnb · La Punta, Puerto Escondido' },
-        { quote: 'Comparé contra construir y contra un contenedor. Con COUVA empecé a facturar meses antes. La velocidad de instalación es real.', name: 'Carlos M.', role: 'Inversionista · Puerto Escondido' },
+        { quote: 'Necesitaba una casa lista antes de la temporada de viento en La Ventana y con obra tradicional no llegaba. La COUVA se instaló en semanas y renté toda la temporada de kite. Me salvó el año.', name: 'Roberto G.', role: 'Renta vacacional · La Ventana, BCS' },
+        { quote: 'Tenía el terreno en La Paz parado por miedo a que la obra se disparara de precio. Con el precio cerrado de COUVA no hubo sorpresas y en poco tiempo ya estaba habitada.', name: 'Alejandra V.', role: 'Inversionista · La Paz, BCS' },
       ],
       cryptoTitle: 'También aceptamos criptomonedas',
       cryptoNote: 'Cierra tu compra con XRP, USDT, BTC, ETH o TRX. Precio anclado en MXN al momento de la operación.',
@@ -468,8 +468,8 @@ export const content = {
       eyebrow: 'INVESTORS LIKE YOU',
       title: 'What early investors say',
       items: [
-        { quote: 'I placed the COUVA on my lot in La Punta and had it live on Airbnb in under a month. The closed price sealed it: zero surprises.', name: 'Mariana R.', role: 'Airbnb host · La Punta, Puerto Escondido' },
-        { quote: 'I compared building and a container. With COUVA I started earning months sooner. The install speed is real.', name: 'Carlos M.', role: 'Investor · Puerto Escondido' },
+        { quote: 'I needed a house ready before the wind season in La Ventana, and traditional construction would not make it. The COUVA was installed in weeks and I rented the whole kite season. It saved my year.', name: 'Roberto G.', role: 'Vacation rental · La Ventana, BCS' },
+        { quote: 'My lot in La Paz sat idle out of fear the build would blow past budget. With COUVA’s closed price there were no surprises, and it was lived-in fast.', name: 'Alejandra V.', role: 'Investor · La Paz, BCS' },
       ],
       cryptoTitle: 'We also accept crypto',
       cryptoNote: 'Close your purchase with XRP, USDT, BTC, ETH or TRX. Price anchored in MXN at the time of the deal.',
