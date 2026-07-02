@@ -662,6 +662,19 @@ const icons: Record<string, string> = {
     landing_path: location.pathname,
   };
 
+  // --- Conversión (Meta Pixel + GA4). No-op si no hay píxel/analytics. ---
+  const META_EVENT = { lead: 'Lead', referral: 'Lead', configurador: 'Lead', descarga: 'CompleteRegistration' };
+  function trackConversion(formType, eventId) {
+    try {
+      if (window.fbq) fbq('track', META_EVENT[formType] || 'Lead', { content_name: 'COUVA 6x6', content_category: formType }, { eventID: eventId });
+      if (window.gtag) {
+        gtag('event', 'generate_lead', { method: formType, event_id: eventId });
+        if (formType === 'descarga') gtag('event', 'file_download', { file_name: 'catalogo-couva-pardesantos.pdf' });
+      }
+    } catch (e) {}
+  }
+  const newId = () => (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+
   // --- Form submit (lead + referral) ---
   function bindForm(id, formType) {
     const form = document.getElementById(id);
@@ -673,12 +686,14 @@ const icons: Record<string, string> = {
       if (form.company && form.company.value) return; // honeypot
       const data = Object.fromEntries(new FormData(form).entries());
       data.consentimiento = !!form.querySelector('[name=consentimiento]')?.checked;
-      const payload = { form: formType, idioma: lang, ...utm, ...data, ts: new Date().toISOString() };
+      const eventId = newId();
+      const payload = { form: formType, idioma: lang, event_id: eventId, ...utm, ...data, ts: new Date().toISOString() };
       const original = btn.textContent;
       btn.disabled = true; btn.textContent = sending; status.textContent = '';
       try {
         const res = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         if (!res.ok) throw new Error(res.status);
+        trackConversion(formType, eventId);
         status.style.color = '#0F7A4F'; status.textContent = form.dataset.successMsg || okMsg; form.reset();
         // Descarga gateada: al enviar, dispara el PDF
         if (form.dataset.download) {
