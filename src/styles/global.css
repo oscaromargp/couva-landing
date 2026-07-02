@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { scroll-behavior: smooth; }
+
+@layer base {
+  h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; }
+}
+
+@layer components {
+  .wrap { @apply mx-auto w-full max-w-content px-5 sm:px-8; }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gold px-7 py-3.5
+           font-semibold text-ink shadow-gold transition hover:bg-golddk hover:-translate-y-0.5;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/30
+           px-7 py-3.5 font-semibold text-white transition hover:bg-white/10;
+  }
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink px-7 py-3.5
+           font-semibold text-cream transition hover:bg-deep hover:-translate-y-0.5;
+  }
+  .eyebrow { @apply text-xs font-bold uppercase tracking-[0.22em] text-gold; }
+  .card { @apply rounded-2xl bg-white p-6 shadow-soft ring-1 ring-ink/5; }
+  .field {
+    @apply w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-ink
+           outline-none transition focus:border-sea focus:ring-2 focus:ring-sea/25;
+  }
+  .label { @apply mb-1.5 block text-sm font-semibold text-ink/80; }
+}
+
+/* Reveal on scroll */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.in { opacity: 1; transform: none; }

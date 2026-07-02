@@ -1,0 +1,21 @@
+# build output
+dist/
+.output/
+.vercel/
+.netlify/
+
+# dependencies
+node_modules/
+
+# secrets — NUNCA subir
+.env
+.env.*
+!.env.example
+
+# n8n / infra exports con posibles credenciales
+*.secret.json
+
+# logs / os
+npm-debug.log*
+.DS_Store
+.astro/

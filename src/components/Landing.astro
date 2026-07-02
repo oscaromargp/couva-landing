@@ -1,0 +1,471 @@
+---
+import { content, contact, type Lang } from '../i18n/content';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = content[lang];
+const other = lang === 'es' ? 'en' : 'es';
+
+const WEBHOOK = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.zxyw.site/webhook/couva-lead';
+const CAL = contact.calendar;
+const legalBase = `/${lang}`;
+const privacyHref = lang === 'es' ? `${legalBase}/aviso-de-privacidad` : `${legalBase}/privacy`;
+const termsHref = lang === 'es' ? `${legalBase}/terminos` : `${legalBase}/terms`;
+const refTermsHref = lang === 'es' ? `${legalBase}/terminos-referidos` : `${legalBase}/referral-terms`;
+const waMsg = lang === 'es'
+  ? 'Hola, vi la COUVA 6×6 y quiero más información y cotización.'
+  : 'Hi, I saw the COUVA 6×6 and would like more info and a quote.';
+const waHref = `${contact.whatsapp}?text=${encodeURIComponent(waMsg)}`;
+
+const icons: Record<string, string> = {
+  clock: '<path d="M12 7v5l3 2" stroke-linecap="round"/><circle cx="12" cy="12" r="9"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke-linecap="round"/>',
+  shield: '<path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/>',
+  wave: '<path d="M2 12c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2" stroke-linecap="round"/><path d="M2 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2" stroke-linecap="round"/>',
+};
+---
+
+<!-- NAV -->
+<header id="nav" class="fixed inset-x-0 top-0 z-50 transition-all duration-300">
+  <nav class="wrap flex items-center justify-between py-4">
+    <a href={`/${lang}`} class="flex items-center gap-2 font-display text-xl font-bold text-white">
+      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"/><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"/></svg>
+      PardeSantos
+    </a>
+    <div class="hidden items-center gap-7 text-sm font-medium text-white/90 lg:flex">
+      <a href="#pain" class="hover:text-gold">{t.nav.pain}</a>
+      <a href="#solution" class="hover:text-gold">{t.nav.solution}</a>
+      <a href="#roi" class="hover:text-gold">{t.nav.roi}</a>
+      <a href="#specs" class="hover:text-gold">{t.nav.specs}</a>
+      <a href="#referral" class="hover:text-gold">{t.nav.referral}</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href={`/${other}`} class="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10">{t.langName}</a>
+      <a href="#contact" class="btn-gold !px-5 !py-2.5 text-sm">{t.nav.cta}</a>
+    </div>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="relative flex min-h-[92vh] items-center overflow-hidden bg-ink">
+  <video class="absolute inset-0 h-full w-full object-cover opacity-45" autoplay muted loop playsinline poster="/media/exterior-frontal.jpeg">
+    <source src="/media/casa-1.mp4" type="video/mp4" />
+  </video>
+  <div class="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40"></div>
+  <div class="wrap relative z-10 pt-28">
+    <p class="eyebrow reveal">{t.hero.eyebrow}</p>
+    <h1 class="reveal mt-4 max-w-3xl text-4xl font-bold leading-[1.05] text-white sm:text-5xl md:text-6xl">
+      {t.hero.title}<br /><span class="text-gold">{t.hero.titleAccent}</span>
+    </h1>
+    <p class="reveal mt-6 max-w-xl text-lg text-sand/90">{t.hero.sub}</p>
+    <div class="reveal mt-8 flex flex-wrap gap-4">
+      <a href={CAL} target="_blank" rel="noopener" class="btn-gold">{t.hero.cta1}</a>
+      <a href="#specs" class="btn-ghost">{t.hero.cta2}</a>
+    </div>
+    <div class="reveal mt-12 flex flex-wrap gap-x-10 gap-y-6 border-t border-white/15 pt-8">
+      {[['stat1n','stat1l'],['stat2n','stat2l'],['stat3n','stat3l']].map(([n,l])=> (
+        <div>
+          <div class="font-display text-3xl font-bold text-gold">{(t.hero as any)[n]}</div>
+          <div class="text-sm text-sand/70">{(t.hero as any)[l]}</div>
+        </div>
+      ))}
+    </div>
+    <p class="reveal mt-8 text-sm text-white/50">{t.hero.trust}</p>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section id="pain" class="bg-cream py-20 sm:py-28">
+  <div class="wrap">
+    <h2 class="reveal max-w-2xl text-3xl font-bold sm:text-4xl">{t.pain.title}</h2>
+    <p class="reveal mt-4 max-w-2xl text-lg text-ink/70">{t.pain.sub}</p>
+    <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {t.pain.items.map((it)=> (
+        <div class="reveal card">
+          <div class="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-sea/10 text-sea">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" set:html={icons[it.icon]} />
+          </div>
+          <h3 class="text-lg font-bold">{it.title}</h3>
+          <p class="mt-2 text-ink/70">{it.body}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section id="solution" class="bg-ink py-20 text-cream sm:py-28">
+  <div class="wrap grid items-center gap-12 lg:grid-cols-2">
+    <div>
+      <p class="eyebrow reveal">PardeSantos · COUVA 6×6</p>
+      <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">{t.solution.title}</h2>
+      <p class="reveal mt-4 text-lg text-sand/80">{t.solution.sub}</p>
+      <div class="mt-8 space-y-6">
+        {t.solution.points.map((p)=> (
+          <div class="reveal flex gap-4">
+            <div class="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gold text-ink">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white">{p.title}</h3>
+              <p class="mt-1 text-sand/75">{p.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div class="reveal">
+      <img src="/media/interior.jpeg" alt={t.meta.ogAlt} loading="lazy" class="aspect-[4/3] w-full rounded-3xl object-cover shadow-soft ring-1 ring-white/10" />
+    </div>
+  </div>
+</section>
+
+<!-- ARGS -->
+<section class="bg-cream py-20 sm:py-28">
+  <div class="wrap">
+    <h2 class="reveal max-w-3xl text-3xl font-bold sm:text-4xl">{t.args.title}</h2>
+    <p class="reveal mt-4 max-w-2xl text-lg text-ink/70">{t.args.sub}</p>
+    <div class="mt-12 grid gap-6 md:grid-cols-3">
+      {t.args.list.map((a)=> (
+        <div class="reveal card border-t-4 border-gold">
+          <div class="font-display text-4xl font-bold text-gold/40">{a.n}</div>
+          <h3 class="mt-2 text-xl font-bold">{a.title}</h3>
+          <p class="mt-2 text-ink/70">{a.body}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ROI CALCULATOR -->
+<section id="roi" class="bg-deep py-20 text-cream sm:py-28">
+  <div class="wrap grid gap-10 lg:grid-cols-2 lg:items-center">
+    <div>
+      <p class="eyebrow reveal">ROI</p>
+      <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">{t.roi.title}</h2>
+      <p class="reveal mt-4 text-lg text-sand/80">{t.roi.sub}</p>
+      <form id="roi-form" class="reveal mt-8 grid grid-cols-2 gap-4">
+        <label class="text-sm">{t.roi.f_rate}
+          <input type="number" id="roi-rate" value="65" min="0" class="field mt-1 !text-ink" />
+        </label>
+        <label class="text-sm">{t.roi.f_occ}
+          <input type="number" id="roi-occ" value="70" min="0" max="100" class="field mt-1 !text-ink" />
+        </label>
+        <label class="text-sm">{t.roi.f_fx}
+          <input type="number" id="roi-fx" value="17.5" min="0" step="0.1" class="field mt-1 !text-ink" />
+        </label>
+        <label class="text-sm">{t.roi.f_months}
+          <input type="number" id="roi-months" value="8" min="0" max="24" class="field mt-1 !text-ink" />
+        </label>
+      </form>
+    </div>
+    <div class="reveal rounded-3xl bg-ink p-8 ring-1 ring-white/10">
+      <div class="border-b border-white/10 pb-6">
+        <div class="text-sm text-sand/70">{t.roi.out_month}</div>
+        <div id="roi-monthly" class="font-display text-4xl font-bold text-gold">—</div>
+      </div>
+      <div class="pt-6">
+        <div class="text-sm text-sand/70">{t.roi.out_saved}</div>
+        <div id="roi-saved" class="font-display text-5xl font-bold text-white">—</div>
+      </div>
+      <p class="mt-6 text-xs leading-relaxed text-sand/50">{t.roi.note}</p>
+      <a href="#lead" class="btn-gold mt-6 w-full">{t.roi.cta}</a>
+    </div>
+  </div>
+</section>
+
+<!-- SPECS -->
+<section id="specs" class="bg-cream py-20 sm:py-28">
+  <div class="wrap grid gap-10 lg:grid-cols-2">
+    <div>
+      <h2 class="reveal text-3xl font-bold sm:text-4xl">{t.specs.title}</h2>
+      <dl class="reveal mt-8 divide-y divide-ink/10 rounded-2xl bg-white shadow-soft ring-1 ring-ink/5">
+        {t.specs.rows.map(([k,v])=> (
+          <div class="flex justify-between gap-4 px-5 py-3.5">
+            <dt class="text-ink/60">{k}</dt>
+            <dd class="text-right font-semibold">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p class="reveal mt-4 text-sm text-ink/60">{t.specs.note}</p>
+      <a href="/ficha-couva-6x6.pdf" target="_blank" rel="noopener" class="btn-dark reveal mt-6">{t.specs.dl}</a>
+    </div>
+    <div class="reveal">
+      <img src="/media/plano.jpg" alt="Plano COUVA 6×6" loading="lazy" class="w-full rounded-3xl bg-white object-contain p-4 shadow-soft ring-1 ring-ink/5" />
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="bg-cream pb-20 sm:pb-28">
+  <div class="wrap">
+    <h2 class="reveal text-3xl font-bold sm:text-4xl">{t.gallery.title}</h2>
+    <p class="reveal mt-3 text-lg text-ink/70">{t.gallery.sub}</p>
+    <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {[
+        ['/media/exterior-frontal.jpeg','Exterior frontal'],
+        ['/media/exterior-derecha.jpeg','Exterior lateral'],
+        ['/media/exterior-izquierda.jpeg','Exterior lateral'],
+        ['/media/interior.jpeg','Interior'],
+        ['/media/lifestyle.jpeg','Ambiente'],
+        ['/media/render-couva.png','Ficha visual'],
+      ].map(([src,alt])=> (
+        <img src={src} alt={alt} loading="lazy" class="reveal aspect-[4/3] w-full rounded-2xl object-cover shadow-soft ring-1 ring-ink/5" />
+      ))}
+    </div>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+      <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster="/media/exterior-frontal.jpeg"><source src="/media/casa-2.mp4" type="video/mp4" /></video>
+      <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster="/media/interior.jpeg"><source src="/media/casa-3.mp4" type="video/mp4" /></video>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="bg-ink py-20 text-cream sm:py-28">
+  <div class="wrap">
+    <h2 class="reveal text-center text-3xl font-bold sm:text-4xl">{t.pricing.title}</h2>
+    <div class="mx-auto mt-12 grid max-w-4xl gap-6 md:grid-cols-3">
+      <div class="reveal rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+        <div class="text-sm text-sand/70">COUVA 6×6</div>
+        <div class="mt-1 font-display text-4xl font-bold text-gold">{t.pricing.price}<span class="ml-1 text-base font-normal text-sand/60">{t.pricing.currency}</span></div>
+        <p class="mt-3 text-sm text-sand/70">{t.pricing.priceNote}</p>
+      </div>
+      <div class="reveal rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+        <div class="text-sm text-sand/70">{t.pricing.flete}</div>
+        <div class="mt-1 font-display text-3xl font-bold text-white">{t.pricing.fleteVal}</div>
+        <p class="mt-3 text-sm text-sand/70">{t.pricing.fleteNote}</p>
+      </div>
+      <div class="reveal rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+        <div class="text-sm text-sand/70">{t.pricing.pago}</div>
+        <div class="mt-1 font-display text-2xl font-bold text-white">{t.pricing.pagoVal}</div>
+        <p class="mt-3 text-sm text-sand/70">{t.pricing.pagoNote}</p>
+      </div>
+    </div>
+    <div class="reveal mx-auto mt-6 max-w-4xl rounded-2xl border border-gold/40 bg-gold/10 p-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3 class="text-lg font-bold text-gold">{t.pricing.cryptoTitle}</h3>
+          <p class="mt-1 text-sm text-sand/80">{t.pricing.cryptoNote}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          {contact.crypto.map((c)=> (
+            <span class="rounded-full bg-ink px-3 py-1.5 text-sm font-bold text-gold ring-1 ring-gold/30">{c}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div class="reveal mt-8 text-center">
+      <a href="#lead" class="btn-gold">{t.pricing.cta}</a>
+      <p class="mx-auto mt-5 max-w-2xl text-xs text-sand/50">{t.pricing.disclaimer}</p>
+    </div>
+  </div>
+</section>
+
+<!-- REFERRAL -->
+<section id="referral" class="bg-sea py-20 text-white sm:py-28">
+  <div class="wrap">
+    <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
+      <div>
+        <p class="reveal text-xs font-bold uppercase tracking-[0.22em] text-ink/80">{t.referral.eyebrow}</p>
+        <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">{t.referral.title}</h2>
+        <p class="reveal mt-4 text-lg text-white/90">{t.referral.sub}</p>
+        <div class="reveal mt-6 inline-flex items-baseline gap-3 rounded-2xl bg-ink px-6 py-4">
+          <span class="font-display text-5xl font-bold text-gold">{t.referral.benefitN}</span>
+          <span class="max-w-[12rem] text-sm text-sand/80">{t.referral.benefitL}</span>
+        </div>
+        <div class="reveal mt-8 grid gap-4 sm:grid-cols-3">
+          {t.referral.how.map((h)=> (
+            <div class="rounded-xl bg-white/10 p-4">
+              <div class="font-display text-2xl font-bold text-gold">{h.n}</div>
+              <h3 class="mt-1 font-bold">{h.title}</h3>
+              <p class="mt-1 text-sm text-white/80">{h.body}</p>
+            </div>
+          ))}
+        </div>
+        <div class="reveal mt-6 flex flex-wrap gap-2">
+          {t.referral.who.map((w)=> (
+            <span class="rounded-full bg-white/15 px-3 py-1 text-sm">{w}</span>
+          ))}
+        </div>
+      </div>
+      <!-- Referral form -->
+      <div class="reveal card text-ink" id="referral-form-wrap">
+        <h3 class="text-xl font-bold">{t.referral.formTitle}</h3>
+        <form id="referral-form" class="mt-5 space-y-4">
+          <input type="text" name="company" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+          <div><label class="label">{t.leadForm.f_name}</label><input required name="nombre" class="field" /></div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div><label class="label">{t.leadForm.f_email}</label><input required type="email" name="email" class="field" /></div>
+            <div><label class="label">{t.leadForm.f_phone}</label><input required name="telefono" class="field" /></div>
+          </div>
+          <div><label class="label">{t.nav.referral}</label>
+            <select name="tipo" class="field">
+              {t.referral.who.map((w)=> (<option value={w}>{w}</option>))}
+            </select>
+          </div>
+          <div><label class="label">{t.leadForm.f_msg}</label><textarea name="mensaje" rows="2" class="field"></textarea></div>
+          <label class="flex items-start gap-2 text-sm text-ink/70">
+            <input required type="checkbox" name="consentimiento" class="mt-1" />
+            <span>{t.leadForm.consent} <a href={privacyHref} class="underline">{t.footer.privacy}</a></span>
+          </label>
+          <button type="submit" class="btn-gold w-full">{t.referral.cta}</button>
+          <p class="form-status text-sm"></p>
+          <p class="text-xs text-ink/50">{t.referral.terms}</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LEAD FORM -->
+<section id="lead" class="bg-cream py-20 sm:py-28">
+  <div class="wrap grid gap-10 lg:grid-cols-2 lg:items-center">
+    <div>
+      <h2 class="reveal text-3xl font-bold sm:text-4xl">{t.leadForm.title}</h2>
+      <p class="reveal mt-4 text-lg text-ink/70">{t.leadForm.sub}</p>
+      <div class="reveal mt-8 rounded-2xl bg-white p-6 shadow-soft ring-1 ring-ink/5">
+        <img src="/media/render-couva.png" alt={t.meta.ogAlt} loading="lazy" class="mx-auto max-h-80 w-auto object-contain" />
+      </div>
+    </div>
+    <div class="reveal card">
+      <form id="lead-form" class="space-y-4">
+        <input type="text" name="company" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+        <div><label class="label">{t.leadForm.f_name}</label><input required name="nombre" class="field" /></div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div><label class="label">{t.leadForm.f_email}</label><input required type="email" name="email" class="field" /></div>
+          <div><label class="label">{t.leadForm.f_phone}</label><input required name="telefono" class="field" /></div>
+        </div>
+        <div><label class="label">{t.leadForm.f_interest}</label>
+          <select name="tipo_interes" class="field">
+            <option value="tiene_terreno">{t.leadForm.opt_land_yes}</option>
+            <option value="busca_terreno">{t.leadForm.opt_land_no}</option>
+            <option value="airbnb">{t.leadForm.opt_airbnb}</option>
+            <option value="uso_propio">{t.leadForm.opt_own}</option>
+            <option value="otro">{t.leadForm.opt_other}</option>
+          </select>
+        </div>
+        <div><label class="label">{t.leadForm.f_msg}</label><textarea name="mensaje" rows="2" class="field"></textarea></div>
+        <label class="flex items-start gap-2 text-sm text-ink/70">
+          <input required type="checkbox" name="consentimiento" class="mt-1" />
+          <span>{t.leadForm.consent} <a href={privacyHref} class="underline">{t.footer.privacy}</a></span>
+        </label>
+        <button type="submit" class="btn-gold w-full">{t.leadForm.submit}</button>
+        <p class="form-status text-sm"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="bg-ink py-20 text-cream sm:py-28">
+  <div class="wrap text-center">
+    <h2 class="reveal text-3xl font-bold sm:text-4xl">{t.contact.title}</h2>
+    <p class="reveal mx-auto mt-4 max-w-xl text-lg text-sand/80">{t.contact.sub}</p>
+    <div class="reveal mx-auto mt-10 flex max-w-2xl flex-wrap justify-center gap-4">
+      <a href={CAL} target="_blank" rel="noopener" class="btn-gold">{t.contact.agenda}</a>
+      <a href={waHref} target="_blank" rel="noopener" class="btn-ghost">{t.contact.whatsapp}</a>
+      <a href={`mailto:${contact.email}`} class="btn-ghost">{t.contact.email}</a>
+    </div>
+    <div class="reveal mt-10 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sand/70">
+      <span>{t.contact.name}</span>
+      <a href={`tel:${contact.phoneIntl}`} class="hover:text-gold">{t.contact.phoneLabel}: {contact.phone}</a>
+      <a href={`mailto:${contact.email}`} class="hover:text-gold">{contact.email}</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-deep py-12 text-sand/70">
+  <div class="wrap grid gap-8 md:grid-cols-2">
+    <div>
+      <div class="flex items-center gap-2 font-display text-lg font-bold text-white">
+        <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"/><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"/></svg>
+        PardeSantos
+      </div>
+      <p class="mt-3 max-w-sm text-sm">{t.footer.tagline}</p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        {contact.crypto.map((c)=> (<span class="rounded bg-white/5 px-2 py-1 text-xs font-semibold text-gold">{c}</span>))}
+      </div>
+    </div>
+    <div class="md:text-right">
+      <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm md:justify-end">
+        <a href={privacyHref} class="hover:text-gold">{t.footer.privacy}</a>
+        <a href={termsHref} class="hover:text-gold">{t.footer.terms}</a>
+        <a href={refTermsHref} class="hover:text-gold">{t.footer.referralTerms}</a>
+      </div>
+      <p class="mt-4 text-xs text-sand/50">{t.footer.disclaimer}</p>
+      <p class="mt-3 text-xs">© {new Date().getFullYear()} PardeSantos · {t.footer.rights}</p>
+    </div>
+  </div>
+</footer>
+
+<script define:vars={{ WEBHOOK, lang, okMsg: t.leadForm.ok, errMsg: t.leadForm.err, sending: t.leadForm.sending }}>
+  // --- Nav solidify on scroll ---
+  const nav = document.getElementById('nav');
+  const onScroll = () => {
+    if (window.scrollY > 40) nav.classList.add('bg-ink/95','backdrop-blur','shadow-soft');
+    else nav.classList.remove('bg-ink/95','backdrop-blur','shadow-soft');
+  };
+  onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
+
+  // --- Reveal on scroll ---
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+  // --- ROI calculator ---
+  const fmt = new Intl.NumberFormat(lang === 'es' ? 'es-MX' : 'en-US', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
+  const $ = (id) => document.getElementById(id);
+  function calcRoi() {
+    const rate = +$('roi-rate').value || 0;
+    const occ = (+$('roi-occ').value || 0) / 100;
+    const fx = +$('roi-fx').value || 0;
+    const months = +$('roi-months').value || 0;
+    const monthly = rate * 30 * occ * fx;
+    $('roi-monthly').textContent = fmt.format(monthly);
+    $('roi-saved').textContent = fmt.format(monthly * months);
+  }
+  ['roi-rate','roi-occ','roi-fx','roi-months'].forEach((id) => $(id)?.addEventListener('input', calcRoi));
+  calcRoi();
+
+  // --- UTM capture ---
+  const params = new URLSearchParams(location.search);
+  const utm = {
+    utm_source: params.get('utm_source') || '',
+    utm_medium: params.get('utm_medium') || '',
+    utm_campaign: params.get('utm_campaign') || '',
+    utm_content: params.get('utm_content') || '',
+    utm_term: params.get('utm_term') || '',
+    referrer: document.referrer || '',
+    landing_path: location.pathname,
+  };
+
+  // --- Form submit (lead + referral) ---
+  function bindForm(id, formType) {
+    const form = document.getElementById(id);
+    if (!form) return;
+    const status = form.querySelector('.form-status');
+    const btn = form.querySelector('button[type=submit]');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (form.company && form.company.value) return; // honeypot
+      const data = Object.fromEntries(new FormData(form).entries());
+      data.consentimiento = !!form.querySelector('[name=consentimiento]')?.checked;
+      const payload = { form: formType, idioma: lang, ...utm, ...data, ts: new Date().toISOString() };
+      const original = btn.textContent;
+      btn.disabled = true; btn.textContent = sending; status.textContent = '';
+      try {
+        const res = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error(res.status);
+        status.style.color = '#0F7A4F'; status.textContent = okMsg; form.reset();
+      } catch (err) {
+        status.style.color = '#B4442E'; status.textContent = errMsg;
+      } finally {
+        btn.disabled = false; btn.textContent = original;
+      }
+    });
+  }
+  bindForm('lead-form', 'lead');
+  bindForm('referral-form', 'referral');
+</script>

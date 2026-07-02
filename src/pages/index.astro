@@ -1,0 +1,20 @@
+---
+// Redirección de raíz -> /es por defecto; el script detecta inglés en el navegador.
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PardeSantos · COUVA 6×6</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href="/es" />
+    <meta http-equiv="refresh" content="0; url=/es" />
+    <script>
+      const lang = (navigator.language || 'es').toLowerCase().startsWith('en') ? 'en' : 'es';
+      location.replace('/' + lang + location.search + location.hash);
+    </script>
+  </head>
+  <body>
+    <a href="/es">Entrar / Enter</a>
+  </body>
+</html>

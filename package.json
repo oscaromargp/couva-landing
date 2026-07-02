@@ -1,0 +1,21 @@
+{
+  "name": "stellar-couva-landing",
+  "version": "1.0.0",
+  "description": "Landing page premium bilingüe (ES/EN) para la casa modular COUVA 6×6 de PardeSantos, con captación de leads vía n8n + Supabase.",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "keywords": ["astro", "landing", "couva", "pardesantos", "puerto-escondido", "casa-modular"],
+  "author": "Oscaromargp",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@astrojs/tailwind": "^6.0.2",
+    "astro": "^4.5.18",
+    "tailwindcss": "^3.4.19"
+  }
+}

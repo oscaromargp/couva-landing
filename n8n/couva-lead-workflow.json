@@ -1,0 +1,210 @@
+{
+  "name": "COUVA 6x6 - Captacion de leads (landing)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "couva-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "Webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst b = ($json.body) ? $json.body : $json;\nconst honeypot = String(b.company || '').trim();\nconst email = String(b.email || '').trim();\nconst isReferral = b.form === 'referral';\nconst table = isReferral ? 'referidos' : 'leads';\nconst skip = honeypot.length > 0 || !email;\n\nlet record;\nif (isReferral) {\n  record = {\n    nombre: b.nombre || null, email: email, telefono: b.telefono || null,\n    tipo: b.tipo || null, zona: b.zona || null, mensaje: b.mensaje || null,\n    idioma: b.idioma || 'es', utm_source: b.utm_source || null,\n    utm_campaign: b.utm_campaign || null, consentimiento: !!b.consentimiento,\n  };\n} else {\n  record = {\n    nombre: b.nombre || null, email: email, telefono: b.telefono || null,\n    idioma: b.idioma || 'es', tipo_interes: b.tipo_interes || null,\n    cta: b.cta || 'lead_form', mensaje: b.mensaje || null,\n    utm_source: b.utm_source || null, utm_medium: b.utm_medium || null,\n    utm_campaign: b.utm_campaign || null, utm_content: b.utm_content || null,\n    utm_term: b.utm_term || null, referrer: b.referrer || null,\n    landing_path: b.landing_path || null, consentimiento: !!b.consentimiento,\n  };\n}\nconst asunto = (isReferral ? '🤝 Nuevo SOCIO referidor' : '🔥 Nuevo LEAD COUVA 6x6') + ' - ' + (b.nombre || 'sin nombre');\nconst cuerpo = Object.entries(record).map(function(e){return e[0] + ': ' + (e[1] == null ? '' : e[1]);}).join('\\n');\nreturn { table: table, record: record, skip: skip, asunto: asunto, cuerpo: cuerpo, isReferral: isReferral };\n"
+      },
+      "id": "Preparar_datos",
+      "name": "Preparar datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Es_spam?",
+      "name": "Es spam?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://aekdukfjftzbbrixuqbk.supabase.co/rest/v1/{{ $json.table }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable__QHR3TiiXE5i4ECjTMFkSA_uWrAV8F0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable__QHR3TiiXE5i4ECjTMFkSA_uWrAV8F0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.record) }}",
+        "options": {}
+      },
+      "id": "Guardar_en_Supabase",
+      "name": "Guardar en Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "oscaromargp@gmail.com",
+        "subject": "={{ $('Preparar datos').item.json.asunto }}",
+        "emailType": "text",
+        "message": "={{ $('Preparar datos').item.json.cuerpo }}",
+        "options": {}
+      },
+      "id": "Notificar_por_Gmail",
+      "name": "Notificar por Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1020,
+        400
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qh3rFQHo55ineVN3",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "Responder_OK",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Preparar datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar datos": {
+      "main": [
+        [
+          {
+            "node": "Es spam?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es spam?": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar en Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar en Supabase": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notificar por Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
