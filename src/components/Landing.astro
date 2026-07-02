@@ -139,6 +139,57 @@ const icons: Record<string, string> = {
   </div>
 </section>
 
+<!-- COMPARATIVA DE VALOR REAL -->
+<section id="comparativa" class="bg-cream pb-20 sm:pb-28">
+  <div class="wrap">
+    <p class="eyebrow reveal">{t.compare.eyebrow}</p>
+    <h2 class="reveal mt-3 max-w-3xl text-3xl font-bold sm:text-4xl">{t.compare.title}</h2>
+    <p class="reveal mt-4 max-w-2xl text-lg text-ink/70">{t.compare.sub}</p>
+
+    <!-- Tabla (desktop) -->
+    <div class="reveal mt-10 hidden overflow-hidden rounded-2xl shadow-soft ring-1 ring-ink/5 md:block">
+      <table class="w-full border-collapse text-left text-sm">
+        <thead>
+          <tr class="bg-ink text-cream">
+            <th class="p-4 font-semibold">{t.compare.col1}</th>
+            <th class="p-4 font-bold text-gold">{t.compare.winner}</th>
+            <th class="p-4 font-semibold text-sand/80">{t.compare.rest1}</th>
+            <th class="p-4 font-semibold text-sand/80">{t.compare.rest2}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {t.compare.rows.map((r, i) => (
+            <tr class={i % 2 ? 'bg-white' : 'bg-sand/20'}>
+              <td class="p-4 font-semibold text-ink">{r.c}</td>
+              <td class="border-l-4 border-gold bg-gold/5 p-4 font-medium text-ink">{r.a}</td>
+              <td class="p-4 text-ink/60">{r.b}</td>
+              <td class="p-4 text-ink/60">{r.d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tarjetas (móvil) -->
+    <div class="mt-8 space-y-4 md:hidden">
+      {t.compare.rows.map((r) => (
+        <div class="reveal card">
+          <div class="text-xs font-bold uppercase tracking-wide text-sea">{r.c}</div>
+          <div class="mt-3 rounded-xl border-l-4 border-gold bg-gold/5 p-3">
+            <div class="text-xs font-semibold text-gold">{t.compare.winner}</div>
+            <div class="font-medium text-ink">{r.a}</div>
+          </div>
+          <div class="mt-2 grid grid-cols-1 gap-2 text-sm">
+            <div class="rounded-lg bg-cream p-3"><span class="block text-xs text-ink/50">{t.compare.rest1}</span>{r.b}</div>
+            <div class="rounded-lg bg-cream p-3"><span class="block text-xs text-ink/50">{t.compare.rest2}</span>{r.d}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <p class="reveal mt-4 text-xs text-ink/50">{t.compare.note}</p>
+  </div>
+</section>
+
 <!-- ROI CALCULATOR -->
 <section id="roi" class="bg-deep py-20 text-cream sm:py-28">
   <div class="wrap grid gap-10 lg:grid-cols-2 lg:items-center">
@@ -222,6 +273,58 @@ const icons: Record<string, string> = {
   </div>
 </section>
 
+<!-- PROCESO COUVA -->
+<section id="proceso" class="bg-ink py-20 text-cream sm:py-28">
+  <div class="wrap">
+    <p class="eyebrow reveal text-center">{t.process.eyebrow}</p>
+    <h2 class="reveal mt-3 text-center text-3xl font-bold sm:text-4xl">{t.process.title}</h2>
+    <p class="reveal mx-auto mt-4 max-w-xl text-center text-lg text-sand/80">{t.process.sub}</p>
+    <div class="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      {t.process.steps.map((s, i) => (
+        <div class="reveal relative">
+          <div class="grid h-12 w-12 place-items-center rounded-full bg-gold font-display text-xl font-bold text-ink">{s.n}</div>
+          {i < t.process.steps.length - 1 && (
+            <div class="absolute left-12 top-6 hidden h-px w-[calc(100%-3rem)] bg-gradient-to-r from-gold/60 to-transparent lg:block"></div>
+          )}
+          <h3 class="mt-4 text-lg font-bold text-white">{s.title}</h3>
+          <p class="mt-2 text-sm text-sand/75">{s.body}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIOS + CRIPTO -->
+<section class="bg-cream py-20 sm:py-28">
+  <div class="wrap">
+    <p class="eyebrow reveal">{t.testimonials.eyebrow}</p>
+    <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">{t.testimonials.title}</h2>
+    <div class="mt-10 grid gap-6 md:grid-cols-2">
+      {t.testimonials.items.map((it) => (
+        <figure class="reveal card flex flex-col">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" class="text-gold/40"><path d="M9 7H5a1 1 0 00-1 1v4a1 1 0 001 1h2v2a2 2 0 01-2 2H4v2h1a4 4 0 004-4V8a1 1 0 00-1-1zm10 0h-4a1 1 0 00-1 1v4a1 1 0 001 1h2v2a2 2 0 01-2 2h-1v2h1a4 4 0 004-4V8a1 1 0 00-1-1z"/></svg>
+          <blockquote class="mt-3 flex-1 text-lg leading-relaxed text-ink/85">“{it.quote}”</blockquote>
+          <figcaption class="mt-5 border-t border-ink/10 pt-4">
+            <div class="font-bold text-ink">{it.name}</div>
+            <div class="text-sm text-ink/60">{it.role}</div>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+    <div class="reveal mt-8 flex flex-col items-center justify-between gap-5 rounded-2xl bg-ink p-6 text-cream sm:flex-row">
+      <div>
+        <h3 class="text-lg font-bold text-gold">{t.testimonials.cryptoTitle}</h3>
+        <p class="mt-1 text-sm text-sand/80">{t.testimonials.cryptoNote}</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {contact.crypto.map((c) => (
+          <span class="rounded-full bg-white/5 px-4 py-2 text-sm font-bold text-gold ring-1 ring-gold/30">{c}</span>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- PRICING -->
 <section class="bg-ink py-20 text-cream sm:py-28">
   <div class="wrap">
@@ -259,6 +362,60 @@ const icons: Record<string, string> = {
     <div class="reveal mt-8 text-center">
       <a href="#lead" class="btn-gold">{t.pricing.cta}</a>
       <p class="mx-auto mt-5 max-w-2xl text-xs text-sand/50">{t.pricing.disclaimer}</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROYECTOS ESPECIALES + CONFIGURADOR -->
+<section id="configurador" class="bg-deep py-20 text-cream sm:py-28">
+  <div class="wrap grid gap-12 lg:grid-cols-2 lg:items-start">
+    <div>
+      <p class="eyebrow reveal">{t.special.eyebrow}</p>
+      <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">{t.special.title}</h2>
+      <p class="reveal mt-4 text-lg text-sand/85">{t.special.body}</p>
+      <ul class="reveal mt-8 grid gap-3 sm:grid-cols-2">
+        {t.special.bullets.map((b) => (
+          <li class="flex items-center gap-3 text-sand/90">
+            <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gold text-ink">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            {b}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Configurador -> n8n (mismo motor de envío) -->
+    <div class="reveal card text-ink" id="configurador-wrap">
+      <h3 class="text-xl font-bold">{t.configurator.title}</h3>
+      <p class="mt-2 text-sm text-ink/70">{t.configurator.sub}</p>
+      <form id="configurador-form" class="mt-5 space-y-4">
+        <input type="text" name="company" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+        <div><label class="label" for="cfg-nombre">{t.leadForm.f_name}</label><input required id="cfg-nombre" name="nombre" class="field" /></div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div><label class="label" for="cfg-email">{t.leadForm.f_email}</label><input required type="email" id="cfg-email" name="email" class="field" /></div>
+          <div><label class="label" for="cfg-telefono">{t.leadForm.f_phone}</label><input required id="cfg-telefono" name="telefono" class="field" /></div>
+        </div>
+        <div><label class="label" for="cfg-uso">{t.configurator.f_use}</label>
+          <select id="cfg-uso" name="uso_proyecto" class="field">
+            {t.configurator.useOpts.map((o) => (<option value={o.v}>{o.l}</option>))}
+          </select>
+        </div>
+        <div><label class="label" for="cfg-terreno">{t.configurator.f_land}</label>
+          <select id="cfg-terreno" name="tipo_terreno" class="field">
+            {t.configurator.landOpts.map((o) => (<option value={o.v}>{o.l}</option>))}
+          </select>
+        </div>
+        <div><label class="label" for="cfg-requerimientos">{t.configurator.f_req}</label>
+          <textarea id="cfg-requerimientos" name="requerimientos" rows="3" class="field" placeholder={t.configurator.f_req_ph}></textarea>
+        </div>
+        <label class="flex items-start gap-2 text-sm text-ink/70">
+          <input required type="checkbox" name="consentimiento" class="mt-1" />
+          <span>{t.leadForm.consent} <a href={privacyHref} class="underline">{t.footer.privacy}</a></span>
+        </label>
+        <button type="submit" class="btn-gold w-full">{t.configurator.submit}</button>
+        <p class="form-status text-sm"></p>
+      </form>
     </div>
   </div>
 </section>
@@ -354,6 +511,25 @@ const icons: Record<string, string> = {
         <button type="submit" class="btn-gold w-full">{t.leadForm.submit}</button>
         <p class="form-status text-sm"></p>
       </form>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ (acordeón) -->
+<section id="faq" class="bg-cream py-20 sm:py-28">
+  <div class="wrap max-w-3xl">
+    <h2 class="reveal text-3xl font-bold sm:text-4xl">{t.faqA.title}</h2>
+    <p class="reveal mt-3 text-lg text-ink/70">{t.faqA.sub}</p>
+    <div class="reveal mt-8 space-y-3">
+      {t.faqA.items.map((f) => (
+        <details class="group rounded-2xl bg-white p-5 shadow-soft ring-1 ring-ink/5 [&_summary::-webkit-details-marker]:hidden">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink">
+            {f.q}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-sea transition-transform duration-300 group-open:rotate-180"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <p class="mt-3 text-ink/70">{f.a}</p>
+        </details>
+      ))}
     </div>
   </div>
 </section>
@@ -470,4 +646,5 @@ const icons: Record<string, string> = {
   }
   bindForm('lead-form', 'lead');
   bindForm('referral-form', 'referral');
+  bindForm('configurador-form', 'configurador');
 </script>
