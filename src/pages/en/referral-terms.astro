@@ -1,5 +1,7 @@
 ---
 import Legal from '../../layouts/Legal.astro';
+import { withBase } from '../../i18n/content';
+const privacyHref = withBase('/en/privacy');
 ---
 <Legal lang="en" path="/referral-terms" title="Referral Program Terms" updated="July 1, 2026">
   <p>The <strong>PardeSantos</strong> Referral Program lets partners (brokers, real estate agents, notaries, municipal agents and similar) earn a commission for referring prospects who close a purchase. By registering, the partner accepts these terms.</p>
@@ -27,7 +29,7 @@ import Legal from '../../layouts/Legal.astro';
   <p>PardeSantos may modify or terminate the program at any time, honoring commissions already earned on sales closed before the change.</p>
 
   <h2>7. Data processing</h2>
-  <p>Partner and referred-prospect data are processed under our <a href="/en/privacy">Privacy Notice</a>.</p>
+  <p>Partner and referred-prospect data are processed under our <a href={privacyHref}>Privacy Notice</a>.</p>
 
   <h2>8. Contact</h2>
   <p>To enroll or ask questions: <a href="mailto:oscaromargp@gmail.com">oscaromargp@gmail.com</a> · 6121077805.</p>

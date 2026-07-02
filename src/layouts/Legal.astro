@@ -1,21 +1,22 @@
 ---
 import Base from './Base.astro';
-import { content, contact, type Lang } from '../i18n/content';
+import { content, contact, withBase, type Lang } from '../i18n/content';
 
 interface Props { lang: Lang; path: string; title: string; updated: string; }
 const { lang, path, title, updated } = Astro.props;
 const t = content[lang];
+const homeHref = withBase(`/${lang}`);
 const backLabel = lang === 'es' ? '← Volver al inicio' : '← Back to home';
 const updLabel = lang === 'es' ? 'Última actualización' : 'Last updated';
 ---
 <Base lang={lang} path={path} title={`${title} · PardeSantos`} description={title}>
   <header class="bg-ink py-5">
     <div class="wrap flex items-center justify-between">
-      <a href={`/${lang}`} class="flex items-center gap-2 font-display text-lg font-bold text-white">
+      <a href={homeHref} class="flex items-center gap-2 font-display text-lg font-bold text-white">
         <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"/><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"/></svg>
         PardeSantos
       </a>
-      <a href={`/${lang}`} class="text-sm text-sand/80 hover:text-gold">{backLabel}</a>
+      <a href={homeHref} class="text-sm text-sand/80 hover:text-gold">{backLabel}</a>
     </div>
   </header>
   <main class="wrap py-14">

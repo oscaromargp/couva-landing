@@ -1,5 +1,8 @@
 ---
 // Redirección de raíz -> /es por defecto; el script detecta inglés en el navegador.
+import { withBase } from '../i18n/content';
+const esHref = withBase('/es');
+const base = withBase('');
 ---
 <!doctype html>
 <html lang="es">
@@ -7,14 +10,14 @@
     <meta charset="UTF-8" />
     <title>PardeSantos · COUVA 6×6</title>
     <meta name="robots" content="noindex" />
-    <link rel="canonical" href="/es" />
-    <meta http-equiv="refresh" content="0; url=/es" />
-    <script>
+    <link rel="canonical" href={esHref} />
+    <meta http-equiv="refresh" content={`0; url=${esHref}`} />
+    <script is:inline define:vars={{ base }}>
       const lang = (navigator.language || 'es').toLowerCase().startsWith('en') ? 'en' : 'es';
-      location.replace('/' + lang + location.search + location.hash);
+      location.replace(base + lang + location.search + location.hash);
     </script>
   </head>
   <body>
-    <a href="/es">Entrar / Enter</a>
+    <a href={esHref}>Entrar / Enter</a>
   </body>
 </html>

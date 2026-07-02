@@ -15,7 +15,8 @@
       "position": [
         0,
         300
-      ]
+      ],
+      "webhookId": "43699e0e-d0db-4f1f-8ca8-1826483ced25"
     },
     {
       "parameters": {
@@ -126,7 +127,9 @@
           "id": "qh3rFQHo55ineVN3",
           "name": "Gmail account"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -144,6 +147,83 @@
         1020,
         200
       ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst p = $('Preparar datos').item.json;\nconst r = p.record || {};\nreturn {\n  fecha: new Date().toISOString(),\n  formulario: p.isReferral ? 'referido' : 'lead',\n  nombre: r.nombre || '',\n  email: r.email || '',\n  telefono: r.telefono || '',\n  detalle: p.isReferral ? (r.tipo || '') : (r.tipo_interes || ''),\n  mensaje: r.mensaje || '',\n  idioma: r.idioma || '',\n  utm_source: r.utm_source || '',\n  utm_campaign: r.utm_campaign || '',\n};\n"
+      },
+      "id": "Fila_Sheets",
+      "name": "Fila para Sheet",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1P9czjwre4o9dc6KyMo-etTUvhiukSeQu35JvGRuzXmA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "Guardar_Sheet",
+      "name": "Guardar en Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1240,
+        560
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "AFr9Hswjjok1WkwV",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "chatId": "824834383",
+        "text": "={{ $('Preparar datos').item.json.asunto + '\\n\\n' + $('Preparar datos').item.json.cuerpo }}",
+        "additionalFields": {}
+      },
+      "id": "Alerta_Telegram",
+      "name": "Alerta Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1240,
+        400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "XTJIcUiWip8C3lTq",
+          "name": "COUVA Telegram Bot"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "continueOnFail": true
     }
   ],
   "connections": {
@@ -199,12 +279,35 @@
             "node": "Notificar por Gmail",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Fila para Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Alerta Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fila para Sheet": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Sheet",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   }
 }

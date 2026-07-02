@@ -1,5 +1,7 @@
 ---
 import Legal from '../../layouts/Legal.astro';
+import { withBase } from '../../i18n/content';
+const privacyHref = withBase('/es/aviso-de-privacidad');
 ---
 <Legal lang="es" path="/terminos-referidos" title="Términos del Programa de Referidos" updated="1 de julio de 2026">
   <p>El Programa de Referidos de <strong>PardeSantos</strong> permite a socios (brokers, agentes inmobiliarios, notarios, agentes municipales y afines) recibir una comisión por recomendar prospectos que concreten una compra. Al registrarse, el socio acepta estos términos.</p>
@@ -27,7 +29,7 @@ import Legal from '../../layouts/Legal.astro';
   <p>PardeSantos podrá modificar o dar por terminado el programa en cualquier momento, respetando las comisiones ya generadas por ventas concretadas antes del cambio.</p>
 
   <h2>7. Tratamiento de datos</h2>
-  <p>Los datos del socio y de los prospectos referidos se tratan conforme a nuestro <a href="/es/aviso-de-privacidad">Aviso de Privacidad</a>.</p>
+  <p>Los datos del socio y de los prospectos referidos se tratan conforme a nuestro <a href={privacyHref}>Aviso de Privacidad</a>.</p>
 
   <h2>8. Contacto</h2>
   <p>Para inscribirse o resolver dudas: <a href="mailto:oscaromargp@gmail.com">oscaromargp@gmail.com</a> · 6121077805.</p>

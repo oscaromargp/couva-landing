@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://couva-pardesantos.netlify.app/sitemap.xml

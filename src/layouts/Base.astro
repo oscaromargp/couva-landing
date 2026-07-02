@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { content, contact, type Lang } from '../i18n/content';
+import { content, contact, withBase, type Lang } from '../i18n/content';
 
 interface Props {
   lang: Lang;
@@ -11,7 +11,9 @@ interface Props {
 
 const { lang, path = '', title, description } = Astro.props;
 const t = content[lang];
-const site = Astro.site?.toString().replace(/\/$/, '') ?? '';
+// site + base de despliegue (para URLs absolutas de OG/canonical/sitemap)
+const origin = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const site = (origin + withBase('')).replace(/\/$/, '');
 
 const pageTitle = title ?? t.meta.title;
 const pageDesc = description ?? t.meta.description;
@@ -46,7 +48,7 @@ const jsonLd = {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
     <meta name="generator" content={Astro.generator} />
 
     <title>{pageTitle}</title>

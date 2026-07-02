@@ -1,5 +1,5 @@
 ---
-import { content, contact, type Lang } from '../i18n/content';
+import { content, contact, withBase, type Lang } from '../i18n/content';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -8,10 +8,12 @@ const other = lang === 'es' ? 'en' : 'es';
 
 const WEBHOOK = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.zxyw.site/webhook/couva-lead';
 const CAL = contact.calendar;
-const legalBase = `/${lang}`;
-const privacyHref = lang === 'es' ? `${legalBase}/aviso-de-privacidad` : `${legalBase}/privacy`;
-const termsHref = lang === 'es' ? `${legalBase}/terminos` : `${legalBase}/terms`;
-const refTermsHref = lang === 'es' ? `${legalBase}/terminos-referidos` : `${legalBase}/referral-terms`;
+const homeHref = withBase(`/${lang}`);
+const otherHref = withBase(`/${other}`);
+const privacyHref = withBase(lang === 'es' ? `/${lang}/aviso-de-privacidad` : `/${lang}/privacy`);
+const termsHref = withBase(lang === 'es' ? `/${lang}/terminos` : `/${lang}/terms`);
+const refTermsHref = withBase(lang === 'es' ? `/${lang}/terminos-referidos` : `/${lang}/referral-terms`);
+const m = (p: string) => withBase(p); // helper corto para medios
 const waMsg = lang === 'es'
   ? 'Hola, vi la COUVA 6×6 y quiero más información y cotización.'
   : 'Hi, I saw the COUVA 6×6 and would like more info and a quote.';
@@ -28,7 +30,7 @@ const icons: Record<string, string> = {
 <!-- NAV -->
 <header id="nav" class="fixed inset-x-0 top-0 z-50 transition-all duration-300">
   <nav class="wrap flex items-center justify-between py-4">
-    <a href={`/${lang}`} class="flex items-center gap-2 font-display text-xl font-bold text-white">
+    <a href={homeHref} class="flex items-center gap-2 font-display text-xl font-bold text-white">
       <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"/><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"/></svg>
       PardeSantos
     </a>
@@ -40,7 +42,7 @@ const icons: Record<string, string> = {
       <a href="#referral" class="hover:text-gold">{t.nav.referral}</a>
     </div>
     <div class="flex items-center gap-3">
-      <a href={`/${other}`} class="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10">{t.langName}</a>
+      <a href={otherHref} class="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10">{t.langName}</a>
       <a href="#contact" class="btn-gold !px-5 !py-2.5 text-sm">{t.nav.cta}</a>
     </div>
   </nav>
@@ -48,8 +50,8 @@ const icons: Record<string, string> = {
 
 <!-- HERO -->
 <section class="relative flex min-h-[92vh] items-center overflow-hidden bg-ink">
-  <video class="absolute inset-0 h-full w-full object-cover opacity-45" autoplay muted loop playsinline poster="/media/exterior-frontal.jpeg">
-    <source src="/media/casa-1.mp4" type="video/mp4" />
+  <video class="absolute inset-0 h-full w-full object-cover opacity-45" autoplay muted loop playsinline poster={m('/media/exterior-frontal.jpeg')}>
+    <source src={m('/media/casa-1.mp4')} type="video/mp4" />
   </video>
   <div class="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40"></div>
   <div class="wrap relative z-10 pt-28">
@@ -115,7 +117,7 @@ const icons: Record<string, string> = {
       </div>
     </div>
     <div class="reveal">
-      <img src="/media/interior.jpeg" alt={t.meta.ogAlt} loading="lazy" class="aspect-[4/3] w-full rounded-3xl object-cover shadow-soft ring-1 ring-white/10" />
+      <img src={m('/media/interior.jpeg')} alt={t.meta.ogAlt} loading="lazy" class="aspect-[4/3] w-full rounded-3xl object-cover shadow-soft ring-1 ring-white/10" />
     </div>
   </div>
 </section>
@@ -188,10 +190,10 @@ const icons: Record<string, string> = {
         ))}
       </dl>
       <p class="reveal mt-4 text-sm text-ink/60">{t.specs.note}</p>
-      <a href="/ficha-couva-6x6.pdf" target="_blank" rel="noopener" class="btn-dark reveal mt-6">{t.specs.dl}</a>
+      <a href={m('/ficha-couva-6x6.pdf')} target="_blank" rel="noopener" class="btn-dark reveal mt-6">{t.specs.dl}</a>
     </div>
     <div class="reveal">
-      <img src="/media/plano.jpg" alt="Plano COUVA 6×6" loading="lazy" class="w-full rounded-3xl bg-white object-contain p-4 shadow-soft ring-1 ring-ink/5" />
+      <img src={m('/media/plano.jpg')} alt="Plano COUVA 6×6" loading="lazy" class="w-full rounded-3xl bg-white object-contain p-4 shadow-soft ring-1 ring-ink/5" />
     </div>
   </div>
 </section>
@@ -210,12 +212,12 @@ const icons: Record<string, string> = {
         ['/media/lifestyle.jpeg','Ambiente'],
         ['/media/render-couva.png','Ficha visual'],
       ].map(([src,alt])=> (
-        <img src={src} alt={alt} loading="lazy" class="reveal aspect-[4/3] w-full rounded-2xl object-cover shadow-soft ring-1 ring-ink/5" />
+        <img src={m(src)} alt={alt} loading="lazy" class="reveal aspect-[4/3] w-full rounded-2xl object-cover shadow-soft ring-1 ring-ink/5" />
       ))}
     </div>
     <div class="mt-6 grid gap-4 sm:grid-cols-2">
-      <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster="/media/exterior-frontal.jpeg"><source src="/media/casa-2.mp4" type="video/mp4" /></video>
-      <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster="/media/interior.jpeg"><source src="/media/casa-3.mp4" type="video/mp4" /></video>
+      <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster={m('/media/exterior-frontal.jpeg')}><source src={m('/media/casa-2.mp4')} type="video/mp4" /></video>
+      <video class="w-full rounded-2xl shadow-soft" controls preload="none" poster={m('/media/interior.jpeg')}><source src={m('/media/casa-3.mp4')} type="video/mp4" /></video>
     </div>
   </div>
 </section>
@@ -324,7 +326,7 @@ const icons: Record<string, string> = {
       <h2 class="reveal text-3xl font-bold sm:text-4xl">{t.leadForm.title}</h2>
       <p class="reveal mt-4 text-lg text-ink/70">{t.leadForm.sub}</p>
       <div class="reveal mt-8 rounded-2xl bg-white p-6 shadow-soft ring-1 ring-ink/5">
-        <img src="/media/render-couva.png" alt={t.meta.ogAlt} loading="lazy" class="mx-auto max-h-80 w-auto object-contain" />
+        <img src={m('/media/render-couva.png')} alt={t.meta.ogAlt} loading="lazy" class="mx-auto max-h-80 w-auto object-contain" />
       </div>
     </div>
     <div class="reveal card">

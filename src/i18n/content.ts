@@ -381,3 +381,11 @@ export const contact = {
 export function t(lang: Lang) {
   return content[lang];
 }
+
+// Une la BASE de despliegue (import.meta.env.BASE_URL) con una ruta absoluta,
+// para que los enlaces/medios funcionen igual en dominio raíz o en subruta.
+export function withBase(p = ''): string {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  if (!p || p === '/') return base + '/';
+  return base + (p.startsWith('/') ? p : '/' + p);
+}
