@@ -34,3 +34,8 @@ html { scroll-behavior: smooth; }
 /* Reveal on scroll */
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
 .reveal.in { opacity: 1; transform: none; }
+
+/* Marquesina de beneficios */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { animation: marquee 24s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .marquee { animation: none; } }
