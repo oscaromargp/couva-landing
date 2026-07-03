@@ -164,6 +164,8 @@ export const content = {
       cryptoNote: 'Además de pago tradicional, aceptamos XRP, USDT, TRX, BTC y ETH. Precio anclado en MXN al momento de la operación.',
       cta: 'Apartar mi unidad',
       disclaimer: 'Precios en pesos mexicanos. El costo de envío es referencial para Puerto Escondido; cotizamos tu destino específico. La cimentación y conexiones finales no están incluidas.',
+      financingTitle: 'Formas de pago y financiamiento',
+      financing: 'No ofrecemos financiamiento directo, pero te asesoramos en opciones bancarias. Aceptamos pago en pesos mexicanos y en criptomonedas (XRP, USDT, BTC, ETH, TRX).',
     },
     faq: {
       title: 'Preguntas frecuentes',
@@ -272,7 +274,7 @@ export const content = {
     special: {
       eyebrow: 'PROYECTOS ESPECIALES Y AMPLIACIONES',
       title: '¿Piensas en algo más grande?',
-      body: 'El sistema Stellar es modular. Podemos unir o apilar módulos para crecer tu espacio, añadir terrazas, o diseñar soluciones habitacionales para proyectos comerciales e industriales en cualquier terreno.',
+      body: 'El sistema modular de PardeSantos es expansible. Podemos unir o apilar módulos para crecer tu espacio, añadir terrazas, o diseñar soluciones habitacionales para proyectos comerciales e industriales en cualquier terreno.',
       bullets: ['Cocheras y recámaras extra', 'Terrazas y áreas comunes', 'Campamentos en la sierra', 'Desarrollos hoteleros / Airbnb', 'Soluciones comerciales e industriales'],
     },
     configurator: {
@@ -351,7 +353,7 @@ export const content = {
         { q: '¿Y si mi terreno es ejidal?', a: 'Es un escenario ideal: al montarse sobre pilotes de concreto y no requerir losa masiva, la ley protege tu casa como bien mueble y tu inversión es reubicable. Verifica siempre la situación legal del terreno.' },
         { q: '¿Cómo viene equipada la cocina?', a: 'Incluye cubierta de cuarzo y parrilla de inducción, además de los acabados interiores premium. Confírmanos el nivel de equipamiento exacto en tu cotización.' },
         { q: '¿Qué costos NO están incluidos?', a: 'El precio de la estructura no incluye flete, maniobra de grúa ni cimentación (pilotes/dados). Te cotizamos estos rubros según tu terreno y destino.' },
-        { q: '¿Tiene garantía?', a: 'Sí: garantía estructural Stellar de 1 año. Te entregamos las condiciones por escrito antes de la compra.' },
+        { q: '¿Tiene garantía?', a: 'Sí: garantía estructural de 1 año. Te entregamos las condiciones por escrito antes de la compra.' },
         { q: '¿Puedo pagar con cripto?', a: 'Sí. Aceptamos XRP, USDT, BTC, ETH y TRX, además de pago tradicional, con precio anclado en MXN.' },
         { q: '¿No es muy caliente por dentro?', a: 'No. El panel aislante EPS de 75 mm corta el calor; en un ejemplo real que visitamos, un minisplit de 2 toneladas enfriaba toda la casa en ~1 hora y adentro no se sentía el bochorno de afuera.' },
         { q: '¿No se va a oxidar cerca del mar?', a: 'El chasis es de acero galvanizado con grado de protección marina y los materiales exteriores repelen el salitre. Con un mantenimiento mínimo (enjuagar con agua dulce, sellado preventivo) se conserva muy bien en clima costero.' },
@@ -518,6 +520,8 @@ export const content = {
       cryptoNote: 'Besides traditional payment, we accept XRP, USDT, TRX, BTC and ETH. Price anchored in MXN at the time of the deal.',
       cta: 'Reserve my unit',
       disclaimer: 'Prices in Mexican pesos. Shipping cost is a reference for Puerto Escondido; we quote your specific destination. Foundation and final connections are not included.',
+      financingTitle: 'Payment and financing',
+      financing: 'We don’t offer direct financing, but we advise you on bank options. We accept payment in Mexican pesos and crypto (XRP, USDT, BTC, ETH, TRX).',
     },
     faq: {
       title: 'Frequently asked questions',
@@ -626,7 +630,7 @@ export const content = {
     special: {
       eyebrow: 'SPECIAL PROJECTS & EXPANSIONS',
       title: 'Thinking bigger?',
-      body: 'The Stellar system is modular. We can join or stack modules to grow your space, add terraces, or design housing solutions for commercial and industrial projects on any land.',
+      body: 'PardeSantos’ modular system is expandable. We can join or stack modules to grow your space, add terraces, or design housing solutions for commercial and industrial projects on any land.',
       bullets: ['Carports and extra bedrooms', 'Terraces and common areas', 'Camps in the sierra', 'Hotel / Airbnb developments', 'Commercial and industrial solutions'],
     },
     configurator: {
@@ -705,7 +709,7 @@ export const content = {
         { q: 'What if my land is ejido?', a: 'An ideal scenario: mounted on concrete piles with no massive slab, the law protects your home as movable property and your investment is relocatable. Always verify your land’s legal status.' },
         { q: 'How is the kitchen equipped?', a: 'It includes a quartz countertop and an induction cooktop, plus premium interior finishes. Confirm the exact equipment level in your quote.' },
         { q: 'What costs are NOT included?', a: 'The structure price excludes freight, crane handling and foundation (piles/pads). We quote these based on your land and destination.' },
-        { q: 'Is there a warranty?', a: 'Yes: a 1-year Stellar structural warranty. We provide the conditions in writing before purchase.' },
+        { q: 'Is there a warranty?', a: 'Yes: a 1-year structural warranty. We provide the conditions in writing before purchase.' },
         { q: 'Can I pay with crypto?', a: 'Yes. We accept XRP, USDT, BTC, ETH and TRX, plus traditional payment, with the price anchored in MXN.' },
         { q: 'Isn’t it too hot inside?', a: 'No. The 75 mm EPS insulated panel blocks the heat; in a real example we visited, a 2-ton mini-split cooled the whole home in ~1 hour and inside you didn’t feel the heat outside.' },
         { q: 'Won’t it rust near the sea?', a: 'The chassis is galvanized steel with marine-grade protection and the exterior materials repel salt. With minimal maintenance (fresh-water rinse, preventive sealing) it holds up very well in coastal climates.' },
