@@ -125,7 +125,8 @@ const jsonLd = {
     {SB_URL && SB_ANON && (
       <script is:inline define:vars={{ SB_URL, SB_ANON }}>
         try {
-          if (!location.pathname.includes('/admin')) {
+          var h = location.hostname;
+          if (!location.pathname.includes('/admin') && h !== 'localhost' && h !== '127.0.0.1') {
             const p = new URLSearchParams(location.search);
             fetch(SB_URL + '/rest/v1/visitas', {
               method: 'POST', keepalive: true,

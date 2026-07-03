@@ -85,6 +85,18 @@ const homeHref = withBase('/es');
         return `<select data-upd="${table}" data-id="${row.id}" data-field="${field}" class="rounded-lg border border-ink/15 px-2 py-1 text-xs">${opts}</select>`;
       }
 
+      function acciones(row, table) {
+        const tel = String(row.telefono || '').replace(/\D/g, '');
+        const wa = tel ? (tel.length === 10 ? '52' + tel : tel) : '';
+        const b = 'inline-grid h-8 w-8 place-items-center rounded-lg ring-1 ring-ink/10 hover:bg-sand/40';
+        let h = '';
+        if (wa) h += `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" title="WhatsApp" class="${b}">💬</a>`;
+        if (row.telefono) h += `<a href="tel:${esc(row.telefono)}" title="Llamar" class="${b}">📞</a>`;
+        if (row.email) h += `<a href="mailto:${esc(row.email)}" title="Correo" class="${b}">✉️</a>`;
+        h += `<button data-del="${table}" data-id="${row.id}" title="Eliminar" class="${b} hover:!bg-red-100">🗑️</button>`;
+        return `<div class="flex gap-1">${h}</div>`;
+      }
+
       function renderLeads(leads) {
         const rows = leads.map((l) => `
           <tr class="border-b border-ink/5 align-top">
@@ -94,8 +106,9 @@ const homeHref = withBase('/es');
             <td class="p-3 text-xs text-ink/70 max-w-[16rem]">${esc(l.requerimientos || l.mensaje || '')}</td>
             <td class="p-3 text-xs text-ink/50">${esc(l.utm_source || '')}</td>
             <td class="p-3">${selectEstado(l, 'leads', 'estado', ESTADOS)}</td>
+            <td class="p-3">${acciones(l, 'leads')}</td>
           </tr>`).join('');
-        return `<div class="overflow-x-auto rounded-2xl bg-white shadow-soft ring-1 ring-ink/5"><table class="w-full text-left text-sm"><thead class="bg-ink text-cream text-xs uppercase"><tr><th class="p-3">Fecha</th><th class="p-3">Contacto</th><th class="p-3">Origen</th><th class="p-3">Mensaje</th><th class="p-3">UTM</th><th class="p-3">Estado</th></tr></thead><tbody>${rows || '<tr><td class="p-6 text-ink/50" colspan="6">Sin prospectos aún.</td></tr>'}</tbody></table></div>`;
+        return `<div class="overflow-x-auto rounded-2xl bg-white shadow-soft ring-1 ring-ink/5"><table class="w-full text-left text-sm"><thead class="bg-ink text-cream text-xs uppercase"><tr><th class="p-3">Fecha</th><th class="p-3">Contacto</th><th class="p-3">Origen</th><th class="p-3">Mensaje</th><th class="p-3">UTM</th><th class="p-3">Estado</th><th class="p-3">Acciones</th></tr></thead><tbody>${rows || '<tr><td class="p-6 text-ink/50" colspan="7">Sin prospectos aún.</td></tr>'}</tbody></table></div>`;
       }
 
       function renderReferidos(refs) {
@@ -106,8 +119,9 @@ const homeHref = withBase('/es');
             <td class="p-3 text-xs">${r.prospecto_nombre ? `<div class="font-semibold">${esc(r.prospecto_nombre)}</div><div class="text-ink/60">${esc(r.prospecto_contacto || '')}</div>` : '<span class="text-ink/40">—</span>'}</td>
             <td class="p-3">${selectEstado(r, 'referidos', 'contrato_estado', CONTRATO)}</td>
             <td class="p-3">${selectEstado(r, 'referidos', 'estado', ['nuevo', 'aprobado', 'activo', 'pausado'])}</td>
+            <td class="p-3">${acciones(r, 'referidos')}</td>
           </tr>`).join('');
-        return `<div class="overflow-x-auto rounded-2xl bg-white shadow-soft ring-1 ring-ink/5"><table class="w-full text-left text-sm"><thead class="bg-ink text-cream text-xs uppercase"><tr><th class="p-3">Fecha</th><th class="p-3">Asociado</th><th class="p-3">Su prospecto</th><th class="p-3">Contrato</th><th class="p-3">Estado</th></tr></thead><tbody>${rows || '<tr><td class="p-6 text-ink/50" colspan="5">Sin asociados aún.</td></tr>'}</tbody></table></div>`;
+        return `<div class="overflow-x-auto rounded-2xl bg-white shadow-soft ring-1 ring-ink/5"><table class="w-full text-left text-sm"><thead class="bg-ink text-cream text-xs uppercase"><tr><th class="p-3">Fecha</th><th class="p-3">Asociado</th><th class="p-3">Su prospecto</th><th class="p-3">Contrato</th><th class="p-3">Estado</th><th class="p-3">Acciones</th></tr></thead><tbody>${rows || '<tr><td class="p-6 text-ink/50" colspan="6">Sin asociados aún.</td></tr>'}</tbody></table></div>`;
       }
 
       async function load() {
@@ -125,6 +139,14 @@ const homeHref = withBase('/es');
             try { await api({ action: 'update', table: sel.dataset.upd, id: sel.dataset.id, patch: { [sel.dataset.field]: sel.value } }); sel.style.outline = '2px solid #0F7A4F'; }
             catch { sel.style.outline = '2px solid #B4442E'; }
             finally { sel.disabled = false; setTimeout(() => (sel.style.outline = ''), 1200); }
+          });
+        });
+        document.querySelectorAll('[data-del]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
+            btn.disabled = true;
+            try { await api({ action: 'delete', table: btn.dataset.del, id: btn.dataset.id }); load(); }
+            catch { alert('No se pudo eliminar.'); btn.disabled = false; }
           });
         });
       }
