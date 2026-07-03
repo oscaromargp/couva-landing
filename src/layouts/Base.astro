@@ -7,9 +7,10 @@ interface Props {
   path?: string;        // ruta relativa sin idioma, ej. '' | '/aviso-de-privacidad'
   title?: string;
   description?: string;
+  canonicalSlug?: string; // ruta absoluta propia (ej. '/es/socios'); si se pasa, se usa como canonical y se omiten alternates
 }
 
-const { lang, path = '', title, description } = Astro.props;
+const { lang, path = '', title, description, canonicalSlug } = Astro.props;
 const t = content[lang];
 // Analítica / píxeles (se activan solos cuando defines las variables de entorno)
 const GA4_ID = import.meta.env.PUBLIC_GA4_ID;
@@ -26,7 +27,7 @@ const pageDesc = description ?? t.meta.description;
 
 const urlEs = `${site}/es${path}`;
 const urlEn = `${site}/en${path}`;
-const canonical = lang === 'es' ? urlEs : urlEn;
+const canonical = canonicalSlug ? `${site}${canonicalSlug}` : (lang === 'es' ? urlEs : urlEn);
 const ogImage = `${site}/og/og-${lang}.jpg`;
 
 // JSON-LD: producto inmobiliario

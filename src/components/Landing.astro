@@ -13,6 +13,7 @@ const otherHref = withBase(`/${other}`);
 const privacyHref = withBase(lang === 'es' ? `/${lang}/aviso-de-privacidad` : `/${lang}/privacy`);
 const termsHref = withBase(lang === 'es' ? `/${lang}/terminos` : `/${lang}/terms`);
 const refTermsHref = withBase(lang === 'es' ? `/${lang}/terminos-referidos` : `/${lang}/referral-terms`);
+const sociosHref = withBase(lang === 'es' ? '/es/socios' : '/en/partners');
 const m = (p: string) => withBase(p); // helper corto para medios
 const waMsg = lang === 'es'
   ? 'Hola, vi la COUVA 6×6 y quiero más información y cotización.'
@@ -564,6 +565,9 @@ const icons: Record<string, string> = {
         <p class="reveal text-xs font-bold uppercase tracking-[0.22em] text-ink/80">{t.referral.eyebrow}</p>
         <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">{t.referral.title}</h2>
         <p class="reveal mt-4 text-lg text-white/90">{t.referral.sub}</p>
+        <a href={sociosHref} class="reveal mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-gold ring-1 ring-gold/40 hover:bg-deep">
+          {lang === 'es' ? '¿Eres inmobiliaria, notario o gestor? Programa de socios' : 'Agency, notary or manager? Partner program'} →
+        </a>
         <div class="reveal mt-6 inline-flex items-baseline gap-3 rounded-2xl bg-ink px-6 py-4">
           <span class="font-display text-5xl font-bold text-gold">{t.referral.benefitN}</span>
           <span class="max-w-[12rem] text-sm text-sand/80">{t.referral.benefitL}</span>
@@ -785,6 +789,12 @@ const icons: Record<string, string> = {
     landing_path: location.pathname,
   };
 
+  // Atribución de socio: captura ?ref=CODIGO y la recuerda para atribuir el lead
+  const refParam = params.get('ref');
+  if (refParam) { try { localStorage.setItem('couva_ref', refParam); } catch (e) {} }
+  let refCodigo = refParam;
+  if (!refCodigo) { try { refCodigo = localStorage.getItem('couva_ref'); } catch (e) { refCodigo = null; } }
+
   // --- Conversión (Meta Pixel + GA4). No-op si no hay píxel/analytics. ---
   const META_EVENT = { lead: 'Lead', referral: 'Lead', configurador: 'Lead', descarga: 'CompleteRegistration' };
   function trackConversion(formType, eventId) {
@@ -810,7 +820,7 @@ const icons: Record<string, string> = {
       const data = Object.fromEntries(new FormData(form).entries());
       data.consentimiento = !!form.querySelector('[name=consentimiento]')?.checked;
       const eventId = newId();
-      const payload = { form: formType, idioma: lang, event_id: eventId, ...utm, ...data, ts: new Date().toISOString() };
+      const payload = { form: formType, idioma: lang, event_id: eventId, ref_codigo: refCodigo || null, ...utm, ...data, ts: new Date().toISOString() };
       const original = btn.textContent;
       btn.disabled = true; btn.textContent = sending; status.textContent = '';
       try {

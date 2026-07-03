@@ -1,0 +1,9 @@
+---
+import Base from '../../layouts/Base.astro';
+import Socios from '../../components/Socios.astro';
+import { content } from '../../i18n/content';
+const s = content.en.socios;
+---
+<Base lang="en" title={s.metaTitle} description={s.metaDesc} canonicalSlug="/en/partners">
+  <Socios lang="en" />
+</Base>

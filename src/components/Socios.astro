@@ -1,0 +1,321 @@
+---
+import { content, contact, withBase, type Lang } from '../i18n/content';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const s = content[lang].socios;
+const tg = content[lang]; // para footer/legales
+const other = lang === 'es' ? 'en' : 'es';
+const otherHref = withBase(lang === 'es' ? '/en/partners' : '/es/socios');
+const productHref = withBase(`/${lang}`);
+const homeRef = withBase(`/${lang}`); // el link del socio apunta a la landing B2C
+const refTermsHref = withBase(lang === 'es' ? '/es/terminos-referidos' : '/en/referral-terms');
+const privacyHref = withBase(lang === 'es' ? '/es/aviso-de-privacidad' : '/en/privacy');
+const WEBHOOK = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.zxyw.site/webhook/couva-lead';
+
+const icons: Record<string, string> = {
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke-linecap="round"/>',
+  clock: '<path d="M12 7v5l3 2" stroke-linecap="round"/><circle cx="12" cy="12" r="9"/>',
+  shield: '<path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/>',
+  bolt: '<path d="M13 2L4 14h6l-1 8 9-12h-6z" stroke-linejoin="round"/>',
+  sofa: '<path d="M4 11V8a2 2 0 012-2h12a2 2 0 012 2v3"/><path d="M2 13a2 2 0 012-2 2 2 0 012 2v3h12v-3a2 2 0 012-2 2 2 0 012 2v5H2z"/>',
+  quake: '<path d="M2 12h3l2-6 4 12 3-9 2 3h6" stroke-linecap="round" stroke-linejoin="round"/>',
+  kitchen: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 3v6M4 9h16" stroke-linecap="round"/>',
+};
+---
+
+<!-- NAV -->
+<header class="bg-ink">
+  <nav class="wrap flex items-center justify-between py-4">
+    <a href={productHref} class="flex items-center gap-2 font-display text-xl font-bold text-white">
+      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"/><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"/></svg>
+      PardeSantos
+    </a>
+    <div class="flex items-center gap-3">
+      <a href={productHref} class="hidden text-sm text-sand/80 hover:text-gold sm:block">{s.backToProduct}</a>
+      <a href={otherHref} class="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10">{tg.langName}</a>
+      <a href="#registro" class="btn-gold !px-5 !py-2.5 text-sm">{s.cta}</a>
+    </div>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="bg-ink pb-16 pt-8 text-cream sm:pb-24">
+  <div class="wrap">
+    <p class="eyebrow reveal">{s.eyebrow}</p>
+    <h1 class="reveal mt-4 max-w-3xl text-4xl font-bold leading-[1.05] sm:text-5xl md:text-6xl">
+      {s.title} <span class="text-gold">{s.titleAccent}</span>
+    </h1>
+    <p class="reveal mt-6 max-w-2xl text-lg text-sand/85">{s.sub}</p>
+    <div class="reveal mt-8 flex flex-wrap gap-4">
+      <a href="#registro" class="btn-gold">{s.cta}</a>
+      <a href="#calc" class="btn-ghost">{s.cta2}</a>
+    </div>
+    <div class="reveal mt-12 grid gap-6 border-t border-white/15 pt-8 sm:grid-cols-3">
+      {[['stat1n','stat1l'],['stat2n','stat2l'],['stat3n','stat3l']].map(([n,l])=> (
+        <div>
+          <div class="font-display text-3xl font-bold text-gold">{(s as any)[n]}</div>
+          <div class="mt-1 text-sm text-sand/70">{(s as any)[l]}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- POR QUÉ -->
+<section class="bg-cream py-20 sm:py-28">
+  <div class="wrap">
+    <h2 class="reveal max-w-2xl text-3xl font-bold sm:text-4xl">{s.whyTitle}</h2>
+    <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {s.why.map((it)=> (
+        <div class="reveal card">
+          <div class="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-sea/10 text-sea">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" set:html={icons[it.icon]} />
+          </div>
+          <h3 class="text-lg font-bold">{it.title}</h3>
+          <p class="mt-2 text-ink/70">{it.body}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- PERFILES -->
+<section class="bg-ink py-20 text-cream sm:py-28">
+  <div class="wrap">
+    <h2 class="reveal max-w-2xl text-3xl font-bold sm:text-4xl">{s.profilesTitle}</h2>
+    <p class="reveal mt-3 max-w-2xl text-lg text-sand/80">{s.profilesSub}</p>
+    <div class="mt-12 grid gap-6 sm:grid-cols-2">
+      {s.profiles.map((it)=> (
+        <div class="reveal flex gap-4 rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+          <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gold text-ink">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" set:html={icons[it.icon]} />
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white">{it.title}</h3>
+            <p class="mt-1 text-sand/75">{it.body}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- CÓMO FUNCIONA -->
+<section class="bg-cream py-20 sm:py-28">
+  <div class="wrap">
+    <h2 class="reveal text-center text-3xl font-bold sm:text-4xl">{s.howTitle}</h2>
+    <div class="mt-12 grid gap-8 sm:grid-cols-3">
+      {s.how.map((st)=> (
+        <div class="reveal text-center">
+          <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-gold font-display text-2xl font-bold text-ink">{st.n}</div>
+          <h3 class="mt-4 text-lg font-bold">{st.title}</h3>
+          <p class="mt-2 text-ink/70">{st.body}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- CALCULADORA DE COMISIONES -->
+<section id="calc" class="bg-deep py-20 text-cream sm:py-28">
+  <div class="wrap grid gap-10 lg:grid-cols-2 lg:items-center">
+    <div>
+      <p class="eyebrow reveal">💰 {s.calcTitle}</p>
+      <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">{s.calcTitle}</h2>
+      <p class="reveal mt-4 text-lg text-sand/80">{s.calcSub}</p>
+      <div class="reveal mt-8 space-y-6">
+        <label class="block text-sm">
+          <div class="flex justify-between"><span>{s.c_price}</span><span id="cp-val" class="font-bold text-gold">$495,000</span></div>
+          <input type="range" id="cp" min="300000" max="900000" step="5000" value="495000" class="mt-2 w-full accent-gold" />
+        </label>
+        <label class="block text-sm">
+          <div class="flex justify-between"><span>{s.c_sales}</span><span id="cs-val" class="font-bold text-gold">2</span></div>
+          <input type="range" id="cs" min="1" max="10" step="1" value="2" class="mt-2 w-full accent-gold" />
+        </label>
+      </div>
+    </div>
+    <div class="reveal rounded-3xl bg-ink p-8 ring-1 ring-white/10">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <span class="text-sm text-sand/70">{s.c_tier}</span>
+        <span id="c-tier" class="rounded-full bg-gold/20 px-3 py-1 text-sm font-bold text-gold">7%</span>
+      </div>
+      <div class="mt-4 flex items-center justify-between">
+        <span class="text-sm text-sand/70">{s.c_perSale}</span>
+        <span id="c-persale" class="font-display text-2xl font-bold text-white">—</span>
+      </div>
+      <div class="mt-6 border-t border-white/10 pt-6">
+        <div class="text-sm text-sand/70">{s.c_month}</div>
+        <div id="c-month" class="font-display text-4xl font-bold text-gold">—</div>
+      </div>
+      <div class="mt-4">
+        <div class="text-sm text-sand/70">{s.c_year}</div>
+        <div id="c-year" class="font-display text-3xl font-bold text-white">—</div>
+      </div>
+      <p class="mt-6 text-xs text-sand/50">{s.c_note}</p>
+      <a href="#registro" class="btn-gold mt-6 w-full">{s.cta}</a>
+    </div>
+  </div>
+</section>
+
+<!-- VENTAJA LEGAL -->
+<section class="bg-sea py-16 text-white sm:py-20">
+  <div class="wrap max-w-3xl">
+    <h2 class="reveal text-3xl font-bold sm:text-4xl">⚖️ {s.legalTitle}</h2>
+    <p class="reveal mt-4 text-lg text-white/90">{s.legalBody}</p>
+  </div>
+</section>
+
+<!-- TESTIMONIOS -->
+<section class="bg-cream py-20 sm:py-28">
+  <div class="wrap">
+    <h2 class="reveal text-3xl font-bold sm:text-4xl">{s.testimonialsTitle}</h2>
+    <div class="mt-10 grid gap-6 md:grid-cols-2">
+      {s.testimonials.map((it)=> (
+        <figure class="reveal card">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" class="text-gold/40"><path d="M9 7H5a1 1 0 00-1 1v4a1 1 0 001 1h2v2a2 2 0 01-2 2H4v2h1a4 4 0 004-4V8a1 1 0 00-1-1zm10 0h-4a1 1 0 00-1 1v4a1 1 0 001 1h2v2a2 2 0 01-2 2h-1v2h1a4 4 0 004-4V8a1 1 0 00-1-1z"/></svg>
+          <blockquote class="mt-3 text-lg leading-relaxed text-ink/85">“{it.quote}”</blockquote>
+          <figcaption class="mt-5 border-t border-ink/10 pt-4">
+            <div class="font-bold text-ink">{it.name}</div>
+            <div class="text-sm text-ink/60">{it.role}</div>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- REGISTRO -->
+<section id="registro" class="bg-ink py-20 text-cream sm:py-28">
+  <div class="wrap grid gap-10 lg:grid-cols-2 lg:items-center">
+    <div>
+      <h2 class="reveal text-3xl font-bold sm:text-4xl">{s.formTitle}</h2>
+      <p class="reveal mt-4 text-lg text-sand/80">{s.formSub}</p>
+      <div class="reveal mt-6 inline-flex items-baseline gap-3 rounded-2xl bg-white/5 px-6 py-4 ring-1 ring-white/10">
+        <span class="font-display text-4xl font-bold text-gold">7→10%</span>
+        <span class="max-w-[12rem] text-sm text-sand/80">{s.stat2l}</span>
+      </div>
+    </div>
+    <div class="reveal card text-ink">
+      <form id="socio-form" class="space-y-4">
+        <input type="text" name="company" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+        <div><label class="label">{content[lang].leadForm.f_name}</label><input required name="nombre" class="field" /></div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div><label class="label">{content[lang].leadForm.f_phone}</label><input required name="telefono" class="field" /></div>
+          <div><label class="label">{content[lang].leadForm.f_email}</label><input required type="email" name="email" class="field" /></div>
+        </div>
+        <div><label class="label">{s.f_perfil}</label>
+          <select name="tipo" class="field">
+            {s.perfiles.map((p)=> (<option value={p}>{p}</option>))}
+          </select>
+        </div>
+        <label class="flex items-start gap-2 text-sm text-ink/70">
+          <input required type="checkbox" name="consentimiento" class="mt-1" />
+          <span>{content[lang].leadForm.consent} <a href={privacyHref} class="underline">{tg.footer.privacy}</a></span>
+        </label>
+        <button type="submit" class="btn-gold w-full">{s.f_submit}</button>
+        <p class="form-status text-sm"></p>
+      </form>
+      <!-- Éxito: link único -->
+      <div id="socio-ok" class="hidden text-center">
+        <div class="text-4xl">🎉</div>
+        <h3 class="mt-2 text-xl font-bold text-ink">{s.successTitle}</h3>
+        <p class="mt-2 text-sm text-ink/70">{s.successMsg}</p>
+        <div class="mt-4 flex items-center gap-2 rounded-xl bg-sand/40 p-3">
+          <input id="socio-link" readonly class="w-full bg-transparent text-sm text-ink outline-none" />
+          <button id="socio-copy" class="btn-gold !px-4 !py-2 text-sm">{s.copyBtn}</button>
+        </div>
+        <a href={withBase('/downloads/kit-socio-couva.zip')} download class="btn-dark mt-4 w-full">
+          {lang === 'es' ? '⬇ Descargar kit de materiales (fotos, catálogo, guion, anuncios)' : '⬇ Download materials kit (photos, catalog, script, ads)'}
+        </a>
+        <p class="mt-3 text-xs text-ink/50">{s.transparency}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRANSPARENCIA -->
+<section class="bg-cream py-14">
+  <div class="wrap max-w-3xl text-center">
+    <h3 class="reveal text-xl font-bold">💳 {s.transparencyTitle}</h3>
+    <p class="reveal mt-3 text-ink/70">{s.transparency}</p>
+    <p class="reveal mt-4 text-sm"><a href={refTermsHref} class="text-sea underline">{tg.footer.referralTerms}</a></p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-deep py-10 text-sand/70">
+  <div class="wrap flex flex-wrap items-center justify-between gap-4 text-sm">
+    <span>© {new Date().getFullYear()} PardeSantos · {tg.footer.rights}</span>
+    <div class="flex flex-wrap gap-x-5 gap-y-1">
+      <a href={productHref} class="hover:text-gold">{s.backToProduct}</a>
+      <a href={privacyHref} class="hover:text-gold">{tg.footer.privacy}</a>
+      <a href={refTermsHref} class="hover:text-gold">{tg.footer.referralTerms}</a>
+    </div>
+  </div>
+</footer>
+
+<script define:vars={{ WEBHOOK, lang, homeRef, okMsg: content[lang].leadForm.ok, errMsg: content[lang].leadForm.err, sending: content[lang].leadForm.sending, copied: s.copied, copyBtn: s.copyBtn }}>
+  const $ = (id) => document.getElementById(id);
+
+  // Reveal
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+  // --- Calculadora de comisiones (escalonada 7/8/10) ---
+  const fmt = new Intl.NumberFormat(lang === 'es' ? 'es-MX' : 'en-US', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
+  function tierPct(sales) { return sales >= 5 ? 0.10 : sales >= 3 ? 0.08 : 0.07; }
+  function calc() {
+    const price = +$('cp').value, sales = +$('cs').value, pct = tierPct(sales);
+    $('cp-val').textContent = fmt.format(price);
+    $('cs-val').textContent = sales;
+    $('c-tier').textContent = (pct * 100) + '%';
+    const per = price * pct;
+    $('c-persale').textContent = fmt.format(per);
+    $('c-month').textContent = fmt.format(per * sales);
+    $('c-year').textContent = fmt.format(per * sales * 12);
+  }
+  ['cp', 'cs'].forEach((id) => $(id).addEventListener('input', calc));
+  calc();
+
+  // UTM
+  const params = new URLSearchParams(location.search);
+  const utm = { utm_source: params.get('utm_source') || '', utm_medium: params.get('utm_medium') || '', utm_campaign: params.get('utm_campaign') || '', referrer: document.referrer || '', landing_path: location.pathname };
+
+  // Código único de socio
+  function slug(s) { return (s || 'socio').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '').slice(0, 12) || 'socio'; }
+  function genCode(nombre) { return slug(nombre.split(' ')[0]) + '-' + Math.random().toString(36).slice(2, 6); }
+
+  // --- Registro de socio ---
+  const form = $('socio-form');
+  const status = form.querySelector('.form-status');
+  const btn = form.querySelector('button[type=submit]');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (form.company.value) return;
+    const codigo = genCode(form.nombre.value);
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.consentimiento = !!form.querySelector('[name=consentimiento]').checked;
+    const payload = { form: 'socio', idioma: lang, codigo, ...utm, ...data, ts: new Date().toISOString() };
+    const orig = btn.textContent; btn.disabled = true; btn.textContent = sending; status.textContent = '';
+    try {
+      const res = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error(res.status);
+      const link = location.origin + homeRef + '?ref=' + codigo;
+      $('socio-link').value = link;
+      form.classList.add('hidden');
+      $('socio-ok').classList.remove('hidden');
+    } catch (err) {
+      status.style.color = '#B4442E'; status.textContent = errMsg;
+      btn.disabled = false; btn.textContent = orig;
+    }
+  });
+
+  // Copiar link
+  const copyBtnEl = $('socio-copy');
+  if (copyBtnEl) copyBtnEl.addEventListener('click', () => {
+    const el = $('socio-link'); el.select();
+    navigator.clipboard?.writeText(el.value).catch(() => document.execCommand('copy'));
+    copyBtnEl.textContent = copied; setTimeout(() => (copyBtnEl.textContent = copyBtn), 1500);
+  });
+</script>
