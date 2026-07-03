@@ -192,6 +192,9 @@ export const content = {
       who: ['Brokers', 'Agentes inmobiliarios', 'Notarios', 'Agentes municipales', 'Administradores de Airbnb'],
       formTitle: 'Quiero ser socio referidor',
       cta: 'Registrarme como socio',
+      pTitle: 'Registra a tu prospecto (opcional)',
+      pNombre: 'Nombre del prospecto',
+      pContacto: 'Contacto del prospecto (tel/correo)',
       terms: 'La comisión del 7% se paga sobre ventas efectivamente concretadas y liquidadas de un prospecto referido y registrado por ti. Consulta las condiciones completas en los Términos del Programa de Referidos.',
     },
     leadForm: {
@@ -543,6 +546,9 @@ export const content = {
       who: ['Brokers', 'Real estate agents', 'Notaries', 'Municipal agents', 'Airbnb managers'],
       formTitle: 'I want to be a referral partner',
       cta: 'Register as a partner',
+      pTitle: 'Register your prospect (optional)',
+      pNombre: 'Prospect name',
+      pContacto: 'Prospect contact (phone/email)',
       terms: 'The 7% commission is paid on sales actually closed and settled from a prospect referred and registered by you. See full conditions in the Referral Program Terms.',
     },
     leadForm: {

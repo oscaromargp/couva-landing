@@ -14,6 +14,9 @@ const t = content[lang];
 // Analítica / píxeles (se activan solos cuando defines las variables de entorno)
 const GA4_ID = import.meta.env.PUBLIC_GA4_ID;
 const META_PIXEL_ID = import.meta.env.PUBLIC_META_PIXEL_ID;
+// Contador propio de visitas (Supabase, insert público). Claves públicas por diseño.
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://aekdukfjftzbbrixuqbk.supabase.co';
+const SB_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable__QHR3TiiXE5i4ECjTMFkSA_uWrAV8F0';
 // site + base de despliegue (para URLs absolutas de OG/canonical/sitemap)
 const origin = Astro.site?.toString().replace(/\/$/, '') ?? '';
 const site = (origin + withBase('')).replace(/\/$/, '');
@@ -119,5 +122,19 @@ const jsonLd = {
   </head>
   <body class="bg-cream text-ink antialiased selection:bg-gold/30">
     <slot />
+    {SB_URL && SB_ANON && (
+      <script is:inline define:vars={{ SB_URL, SB_ANON }}>
+        try {
+          if (!location.pathname.includes('/admin')) {
+            const p = new URLSearchParams(location.search);
+            fetch(SB_URL + '/rest/v1/visitas', {
+              method: 'POST', keepalive: true,
+              headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+              body: JSON.stringify({ path: location.pathname, idioma: document.documentElement.lang, referrer: document.referrer || null, utm_source: p.get('utm_source'), utm_campaign: p.get('utm_campaign'), ua: navigator.userAgent.slice(0, 120) }),
+            }).catch(function(){});
+          }
+        } catch (e) {}
+      </script>
+    )}
   </body>
 </html>
