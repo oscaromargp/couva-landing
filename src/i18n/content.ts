@@ -133,9 +133,9 @@ export const content = {
       ],
       videosTitle: 'Videos',
       videos: [
-        { src: '/media/recorrido-amueblada.mp4', poster: '/media/interior/sala.jpg', label: 'Recorrido casa amueblada' },
-        { src: '/media/como-se-fabrica.mp4', poster: '/media/obra/estructura-lateral.jpg', label: 'Cómo se fabrica' },
         { src: '/media/render-sketchup.mp4', poster: '/media/render-couva.png', label: 'Render 3D del modelo' },
+        { src: '/media/casa-3.mp4', poster: '/media/interior/sala.jpg', label: 'Recorrido de la casa' },
+        { src: '/media/casa-2.mp4', poster: '/media/exterior-derecha.jpeg', label: 'La casa por fuera' },
       ],
     },
     download: {
@@ -484,9 +484,9 @@ export const content = {
       ],
       videosTitle: 'Videos',
       videos: [
-        { src: '/media/recorrido-amueblada.mp4', poster: '/media/interior/sala.jpg', label: 'Furnished walkthrough' },
-        { src: '/media/como-se-fabrica.mp4', poster: '/media/obra/estructura-lateral.jpg', label: 'How it is made' },
         { src: '/media/render-sketchup.mp4', poster: '/media/render-couva.png', label: '3D model render' },
+        { src: '/media/casa-3.mp4', poster: '/media/interior/sala.jpg', label: 'Home walkthrough' },
+        { src: '/media/casa-2.mp4', poster: '/media/exterior-derecha.jpeg', label: 'The home outside' },
       ],
     },
     download: {
