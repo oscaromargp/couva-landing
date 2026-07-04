@@ -565,9 +565,15 @@ const icons: Record<string, string> = {
         <p class="reveal text-xs font-bold uppercase tracking-[0.22em] text-ink/80">{t.referral.eyebrow}</p>
         <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">{t.referral.title}</h2>
         <p class="reveal mt-4 text-lg text-white/90">{t.referral.sub}</p>
-        <a href={sociosHref} class="reveal mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-gold ring-1 ring-gold/40 hover:bg-deep">
-          {lang === 'es' ? '¿Eres inmobiliaria, notario o gestor? Programa de socios' : 'Agency, notary or manager? Partner program'} →
-        </a>
+        <div class="reveal mt-5 flex flex-wrap items-center gap-3">
+          <a href={sociosHref} class="btn-dark">{lang === 'es' ? 'Conoce el Programa de Socios' : 'See the Partner Program'} →</a>
+          <span class="text-sm font-medium text-white/85">{lang === 'es' ? 'Inmobiliarias · notarios · gestores → gana 7%–10%' : 'Agencies · notaries · managers → earn 7%–10%'}</span>
+        </div>
+        <div class="reveal mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+          <a href={refTermsHref} class="text-white/80 underline hover:text-gold">{t.footer.referralTerms}</a>
+          <a href={termsHref} class="text-white/80 underline hover:text-gold">{t.footer.terms}</a>
+          <a href={privacyHref} class="text-white/80 underline hover:text-gold">{t.footer.privacy}</a>
+        </div>
         <div class="reveal mt-6 inline-flex items-baseline gap-3 rounded-2xl bg-ink px-6 py-4">
           <span class="font-display text-5xl font-bold text-gold">{t.referral.benefitN}</span>
           <span class="max-w-[12rem] text-sm text-sand/80">{t.referral.benefitL}</span>
