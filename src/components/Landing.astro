@@ -14,6 +14,7 @@ const privacyHref = withBase(lang === 'es' ? `/${lang}/aviso-de-privacidad` : `/
 const termsHref = withBase(lang === 'es' ? `/${lang}/terminos` : `/${lang}/terms`);
 const refTermsHref = withBase(lang === 'es' ? `/${lang}/terminos-referidos` : `/${lang}/referral-terms`);
 const sociosHref = withBase(lang === 'es' ? '/es/socios' : '/en/partners');
+const negociosHref = withBase(lang === 'es' ? '/es/negocios' : '/en/business');
 const m = (p: string) => withBase(p); // helper corto para medios
 const waMsg = lang === 'es'
   ? 'Hola, vi la COUVA 6×6 y quiero más información y cotización.'
@@ -50,6 +51,7 @@ const icons: Record<string, string> = {
       <a href="#roi" class="hover:text-gold">{t.nav.roi}</a>
       <a href="#specs" class="hover:text-gold">{t.nav.specs}</a>
       <a href="#referral" class="hover:text-gold">{t.nav.referral}</a>
+      <a href={negociosHref} class="rounded-full bg-white/10 px-3 py-1 text-gold ring-1 ring-gold/30 hover:bg-white/20">{lang === 'es' ? '🏢 Negocios' : '🏢 Business'}</a>
     </div>
     <div class="flex items-center gap-3">
       <a href={otherHref} class="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10">{t.langName}</a>

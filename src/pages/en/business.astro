@@ -1,0 +1,9 @@
+---
+import Base from '../../layouts/Base.astro';
+import Negocios from '../../components/Negocios.astro';
+import { content } from '../../i18n/content';
+const n = content.en.negocios;
+---
+<Base lang="en" title={n.metaTitle} description={n.metaDesc} canonicalSlug="/en/business">
+  <Negocios lang="en" />
+</Base>

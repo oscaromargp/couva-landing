@@ -136,7 +136,7 @@ const homeHref = withBase('/es');
           <tr class="border-b border-ink/5 align-top">
             <td class="p-3 text-xs text-ink/50">${fecha(l.created_at)}</td>
             <td class="p-3"><div class="font-semibold">${esc(l.nombre)}</div><div class="text-xs text-ink/60">${esc(l.email)}</div><div class="text-xs text-ink/60">${esc(l.telefono)}</div></td>
-            <td class="p-3 text-xs"><span class="rounded-full bg-sea/10 px-2 py-0.5 text-sea">${esc(l.cta || 'lead')}</span><div class="mt-1 text-ink/60">${esc(l.tipo_interes || l.uso_proyecto || '')}</div>${l.tipo_terreno ? `<div class="text-ink/50">Terreno: ${esc(l.tipo_terreno)}</div>` : ''}${l.ref_codigo ? `<div class="mt-1 font-semibold text-golddk">🤝 socio: ${esc(l.ref_codigo)}</div>` : ''}</td>
+            <td class="p-3 text-xs"><span class="rounded-full bg-sea/10 px-2 py-0.5 text-sea">${esc(l.cta || 'lead')}</span><div class="mt-1 text-ink/60">${esc(l.tipo_interes || l.uso_proyecto || '')}</div>${l.tipo_terreno ? `<div class="text-ink/50">Terreno: ${esc(l.tipo_terreno)}</div>` : ''}${l.modelo ? `<div class="mt-1 font-semibold text-sea">🏢 ${esc(l.modelo)}${l.unidades ? ' · ' + esc(l.unidades) + 'u' : ''}${l.uso_comercial ? ' · ' + esc(l.uso_comercial) : ''}</div>` : ''}${l.ref_codigo ? `<div class="mt-1 font-semibold text-golddk">🤝 socio: ${esc(l.ref_codigo)}</div>` : ''}</td>
             <td class="p-3 text-xs text-ink/70 max-w-[16rem]">${esc(l.requerimientos || l.mensaje || '')}</td>
             <td class="p-3 text-xs text-ink/50">${esc(l.utm_source || '')}</td>
             <td class="p-3">${selectEstado(l, 'leads', 'estado', ESTADOS)}</td>
