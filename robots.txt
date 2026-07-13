@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://oscaromargp.github.io/couva-landing/sitemap.xml

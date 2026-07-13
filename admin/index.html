@@ -1,0 +1,181 @@
+<!DOCTYPE html><html lang="es"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex, nofollow"><title>Panel · PardeSantos</title><link rel="icon" type="image/svg+xml" href="/couva-landing/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/couva-landing/_astro/privacy.Uiza1dCG.css"></head> <body class="bg-cream text-ink antialiased"> <!-- LOGIN --> <div id="login" class="grid min-h-screen place-items-center p-4"> <form id="login-form" class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-soft ring-1 ring-ink/5"> <div class="flex items-center gap-2 font-display text-xl font-bold"> <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"></rect><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"></path></svg>
+Panel PardeSantos
+</div> <p class="mt-1 text-sm text-ink/60">Centro de operaciones</p> <label class="label mt-6">Usuario</label> <input id="u" class="field" autocomplete="username"> <label class="label mt-4">Contraseña</label> <input id="p" type="password" class="field" autocomplete="current-password"> <button class="btn-gold mt-6 w-full">Entrar</button> <p id="login-err" class="mt-3 text-sm text-red-600"></p> </form> </div> <!-- DASHBOARD --> <div id="dash" class="hidden"> <header class="sticky top-0 z-10 border-b border-ink/10 bg-white/95 backdrop-blur"> <div class="wrap flex items-center justify-between py-3"> <div class="font-display text-lg font-bold">Panel PardeSantos</div> <div class="flex items-center gap-3"> <button id="refresh" class="rounded-full border border-ink/15 px-4 py-1.5 text-sm font-semibold hover:bg-sand/40">↻ Actualizar</button> <a href="/couva-landing/es" class="text-sm text-ink/60 hover:text-sea">Ver sitio</a> <button id="logout" class="text-sm text-ink/60 hover:text-red-600">Salir</button> </div> </div> </header> <main class="wrap py-8"> <div id="stats" class="grid grid-cols-2 gap-4 sm:grid-cols-4"></div> <div class="mt-8 flex flex-wrap gap-2"> <button class="tab btn-gold !px-5 !py-2 text-sm" data-view="leads">Prospectos</button> <button class="tab rounded-full bg-white px-5 py-2 text-sm font-semibold ring-1 ring-ink/10" data-view="referidos">Asociados y referidos</button> </div> <div class="mt-4 flex flex-wrap items-center gap-2"> <input id="q" placeholder="🔎 Buscar nombre, correo, teléfono..." class="field !py-2 max-w-xs text-sm"> <select id="f-estado" class="field !py-2 max-w-[11rem] text-sm"> <option value="">Todos los estados</option> <option value="nuevo">nuevo</option><option value="contactado">contactado</option> <option value="calificado">calificado</option><option value="ganado">ganado</option><option value="perdido">perdido</option> </select> <button id="export" class="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-cream hover:bg-deep">⬇ Exportar CSV</button> </div> <div id="view-leads" class="mt-6"></div> <div id="view-referidos" class="mt-6 hidden"></div> </main> </div> <!-- MODAL BITÁCORA --> <div id="nota-modal" class="fixed inset-0 z-50 items-center justify-center bg-ink/70 p-4" style="display:none"> <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-soft"> <div class="flex items-center justify-between"> <h3 class="font-display text-lg font-bold" id="nota-title">Bitácora de seguimiento</h3> <button id="nota-close" class="text-2xl leading-none text-ink/40 hover:text-ink">×</button> </div> <div id="nota-log" class="mt-4 max-h-72 space-y-2 overflow-y-auto"></div> <form id="nota-form" class="mt-4 border-t border-ink/10 pt-4"> <div class="flex flex-wrap gap-2"> <select id="nota-tipo" class="field !py-2 max-w-[9rem] text-sm"> <option value="nota">📝 Nota</option> <option value="llamada">📞 Llamada</option> <option value="whatsapp">💬 WhatsApp</option> <option value="correo">✉️ Correo</option> </select> <input id="nota-texto" required placeholder="Resumen de lo que se habló, dudas, próximos pasos..." class="field !py-2 flex-1 text-sm"> <button class="btn-gold !px-4 !py-2 text-sm">Guardar</button> </div> </form> </div> </div> <script>(function(){const FN = "https://aekdukfjftzbbrixuqbk.supabase.co/functions/v1/admin";
+
+      const $ = (id) => document.getElementById(id);
+      let auth = null;
+
+      async function api(payload) {
+        const res = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...auth, ...payload }) });
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+      }
+
+      const ESTADOS = ['nuevo', 'contactado', 'calificado', 'ganado', 'perdido'];
+      const CONTRATO = ['pendiente', 'enviado', 'recibido'];
+      const esc = (s) => (s == null ? '' : String(s)).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+      const fecha = (s) => { try { return new Date(s).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return s; } };
+
+      function stat(label, value, accent) {
+        return `<div class="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-ink/5"><div class="text-3xl font-bold ${accent || 'text-sea'}" style="font-family:Fraunces,serif">${value}</div><div class="mt-1 text-sm text-ink/60">${label}</div></div>`;
+      }
+
+      function selectEstado(row, table, field, options) {
+        const cur = row[field] || options[0];
+        const opts = options.map((o) => `<option value="${o}" ${o === cur ? 'selected' : ''}>${o}</option>`).join('');
+        return `<select data-upd="${table}" data-id="${row.id}" data-field="${field}" class="rounded-lg border border-ink/15 px-2 py-1 text-xs">${opts}</select>`;
+      }
+
+      function acciones(row, table) {
+        const tel = String(row.telefono || '').replace(/\D/g, '');
+        const wa = tel ? (tel.length === 10 ? '52' + tel : tel) : '';
+        const b = 'inline-grid h-8 w-8 place-items-center rounded-lg ring-1 ring-ink/10 hover:bg-sand/40';
+        let h = '';
+        if (wa) h += `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" title="WhatsApp" class="${b}">💬</a>`;
+        if (row.telefono) h += `<a href="tel:${esc(row.telefono)}" title="Llamar" class="${b}">📞</a>`;
+        if (row.email) h += `<a href="mailto:${esc(row.email)}" title="Correo" class="${b}">✉️</a>`;
+        h += `<button data-nota="${table}" data-id="${row.id}" data-name="${esc(row.nombre || '')}" title="Bitácora (${seguimientosDe(table, row.id).length})" class="${b} relative">📝${seguimientosDe(table, row.id).length ? '<span class="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-sea text-[10px] text-white">' + seguimientosDe(table, row.id).length + '</span>' : ''}</button>`;
+        h += `<button data-del="${table}" data-id="${row.id}" title="Eliminar" class="${b} hover:!bg-red-100">🗑️</button>`;
+        return `<div class="flex gap-1">${h}</div>`;
+      }
+
+      function renderLeads(leads) {
+        const rows = leads.map((l) => `
+          <tr class="border-b border-ink/5 align-top">
+            <td class="p-3 text-xs text-ink/50">${fecha(l.created_at)}</td>
+            <td class="p-3"><div class="font-semibold">${esc(l.nombre)}</div><div class="text-xs text-ink/60">${esc(l.email)}</div><div class="text-xs text-ink/60">${esc(l.telefono)}</div></td>
+            <td class="p-3 text-xs"><span class="rounded-full bg-sea/10 px-2 py-0.5 text-sea">${esc(l.cta || 'lead')}</span><div class="mt-1 text-ink/60">${esc(l.tipo_interes || l.uso_proyecto || '')}</div>${l.tipo_terreno ? `<div class="text-ink/50">Terreno: ${esc(l.tipo_terreno)}</div>` : ''}${l.modelo ? `<div class="mt-1 font-semibold text-sea">🏢 ${esc(l.modelo)}${l.unidades ? ' · ' + esc(l.unidades) + 'u' : ''}${l.uso_comercial ? ' · ' + esc(l.uso_comercial) : ''}</div>` : ''}${l.ref_codigo ? `<div class="mt-1 font-semibold text-golddk">🤝 socio: ${esc(l.ref_codigo)}</div>` : ''}</td>
+            <td class="p-3 text-xs text-ink/70 max-w-[16rem]">${esc(l.requerimientos || l.mensaje || '')}</td>
+            <td class="p-3 text-xs text-ink/50">${esc(l.utm_source || '')}</td>
+            <td class="p-3">${selectEstado(l, 'leads', 'estado', ESTADOS)}</td>
+            <td class="p-3">${acciones(l, 'leads')}</td>
+          </tr>`).join('');
+        return `<div class="overflow-x-auto rounded-2xl bg-white shadow-soft ring-1 ring-ink/5"><table class="w-full text-left text-sm"><thead class="bg-ink text-cream text-xs uppercase"><tr><th class="p-3">Fecha</th><th class="p-3">Contacto</th><th class="p-3">Origen</th><th class="p-3">Mensaje</th><th class="p-3">UTM</th><th class="p-3">Estado</th><th class="p-3">Acciones</th></tr></thead><tbody>${rows || '<tr><td class="p-6 text-ink/50" colspan="7">Sin prospectos aún.</td></tr>'}</tbody></table></div>`;
+      }
+
+      function renderReferidos(refs) {
+        const rows = refs.map((r) => `
+          <tr class="border-b border-ink/5 align-top">
+            <td class="p-3 text-xs text-ink/50">${fecha(r.created_at)}</td>
+            <td class="p-3"><div class="font-semibold">${esc(r.nombre)}</div><div class="text-xs text-ink/60">${esc(r.email)}</div><div class="text-xs text-ink/60">${esc(r.telefono)}</div><div class="text-xs text-sea">${esc(r.tipo || '')}</div>${r.codigo ? `<div class="text-xs font-semibold text-golddk">🔗 ${esc(r.codigo)}</div>` : ''}</td>
+            <td class="p-3 text-xs">${r.prospecto_nombre ? `<div class="font-semibold">${esc(r.prospecto_nombre)}</div><div class="text-ink/60">${esc(r.prospecto_contacto || '')}</div>` : '<span class="text-ink/40">—</span>'}</td>
+            <td class="p-3">${selectEstado(r, 'referidos', 'contrato_estado', CONTRATO)}</td>
+            <td class="p-3">${selectEstado(r, 'referidos', 'estado', ['nuevo', 'aprobado', 'activo', 'pausado'])}</td>
+            <td class="p-3">${acciones(r, 'referidos')}</td>
+          </tr>`).join('');
+        return `<div class="overflow-x-auto rounded-2xl bg-white shadow-soft ring-1 ring-ink/5"><table class="w-full text-left text-sm"><thead class="bg-ink text-cream text-xs uppercase"><tr><th class="p-3">Fecha</th><th class="p-3">Asociado</th><th class="p-3">Su prospecto</th><th class="p-3">Contrato</th><th class="p-3">Estado</th><th class="p-3">Acciones</th></tr></thead><tbody>${rows || '<tr><td class="p-6 text-ink/50" colspan="6">Sin asociados aún.</td></tr>'}</tbody></table></div>`;
+      }
+
+      let DATA = null;
+      function seguimientosDe(table, id) { return (DATA && DATA.seguimientos ? DATA.seguimientos : []).filter((s) => s.tabla === table && s.registro_id === id); }
+
+      function filtrar(list) {
+        const q = ($('q').value || '').toLowerCase().trim();
+        const est = $('f-estado').value;
+        return list.filter((r) => {
+          if (est && r.estado !== est) return false;
+          if (!q) return true;
+          return [r.nombre, r.email, r.telefono, r.mensaje, r.prospecto_nombre].some((v) => String(v || '').toLowerCase().includes(q));
+        });
+      }
+
+      function attachRowListeners() {
+        document.querySelectorAll('[data-upd]').forEach((sel) => {
+          sel.addEventListener('change', async () => {
+            sel.disabled = true;
+            try { await api({ action: 'update', table: sel.dataset.upd, id: sel.dataset.id, patch: { [sel.dataset.field]: sel.value } }); const row = (DATA[sel.dataset.upd] || []).find((x) => x.id === sel.dataset.id); if (row) row[sel.dataset.field] = sel.value; sel.style.outline = '2px solid #0F7A4F'; }
+            catch { sel.style.outline = '2px solid #B4442E'; }
+            finally { sel.disabled = false; setTimeout(() => (sel.style.outline = ''), 1200); }
+          });
+        });
+        document.querySelectorAll('[data-del]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
+            btn.disabled = true;
+            try { await api({ action: 'delete', table: btn.dataset.del, id: btn.dataset.id }); load(); }
+            catch { alert('No se pudo eliminar.'); btn.disabled = false; }
+          });
+        });
+        document.querySelectorAll('[data-nota]').forEach((btn) => btn.addEventListener('click', () => openNota(btn.dataset.nota, btn.dataset.id, btn.dataset.name)));
+      }
+
+      function render() {
+        if (!DATA) return;
+        $('view-leads').innerHTML = renderLeads(filtrar(DATA.leads));
+        $('view-referidos').innerHTML = renderReferidos(filtrar(DATA.referidos));
+        attachRowListeners();
+      }
+
+      async function load() {
+        DATA = await api({ action: 'list' });
+        $('stats').innerHTML =
+          stat('Visitas (total)', DATA.visitas.total, 'text-ink') +
+          stat('Visitas (7 días)', DATA.visitas.ultimos7, 'text-sea') +
+          stat('Prospectos', DATA.leads.length, 'text-gold') +
+          stat('Asociados', DATA.referidos.length, 'text-sea');
+        render();
+      }
+
+      // --- Bitácora (modal) ---
+      let notaCtx = null;
+      function openNota(table, id, name) {
+        notaCtx = { table, id };
+        $('nota-title').textContent = 'Bitácora · ' + (name || '');
+        renderLog();
+        $('nota-modal').style.display = 'flex';
+      }
+      function renderLog() {
+        const emo = { nota: '📝', llamada: '📞', whatsapp: '💬', correo: '✉️' };
+        const items = seguimientosDe(notaCtx.table, notaCtx.id);
+        $('nota-log').innerHTML = items.length
+          ? items.map((s) => `<div class="rounded-lg bg-sand/30 p-2 text-sm"><div class="flex justify-between text-xs text-ink/50"><span>${emo[s.tipo] || '📝'} ${fecha(s.created_at)}</span><button data-delnota="${s.id}" class="hover:text-red-600">✕</button></div><div class="mt-1 text-ink/80">${esc(s.texto)}</div></div>`).join('')
+          : '<p class="text-sm text-ink/40">Sin registros. Agrega el primero abajo. 👇</p>';
+        $('nota-log').querySelectorAll('[data-delnota]').forEach((b) => b.addEventListener('click', async () => { await api({ action: 'del_nota', id: b.dataset.delnota }); DATA.seguimientos = DATA.seguimientos.filter((x) => x.id !== b.dataset.delnota); renderLog(); render(); }));
+      }
+      $('nota-close').addEventListener('click', () => ($('nota-modal').style.display = 'none'));
+      $('nota-modal').addEventListener('click', (e) => { if (e.target === $('nota-modal')) $('nota-modal').style.display = 'none'; });
+      $('nota-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const texto = $('nota-texto').value.trim(); if (!texto) return;
+        try {
+          await api({ action: 'add_nota', table: notaCtx.table, id: notaCtx.id, tipo: $('nota-tipo').value, texto });
+          $('nota-texto').value = '';
+          const fresh = await api({ action: 'list' }); DATA.seguimientos = fresh.seguimientos;
+          renderLog(); render();
+        } catch { alert('No se pudo guardar la nota.'); }
+      });
+
+      // --- Filtros + exportar ---
+      $('q').addEventListener('input', render);
+      $('f-estado').addEventListener('change', render);
+      $('export').addEventListener('click', () => {
+        const rows = filtrar(DATA.leads);
+        const cols = ['created_at', 'nombre', 'email', 'telefono', 'cta', 'tipo_interes', 'uso_proyecto', 'tipo_terreno', 'estado', 'mensaje', 'requerimientos', 'utm_source', 'utm_campaign'];
+        const csv = [cols.join(',')].concat(rows.map((r) => cols.map((c) => '"' + String(r[c] == null ? '' : r[c]).replace(/"/g, '""') + '"').join(','))).join('\n');
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); a.download = 'prospectos-couva.csv'; a.click();
+      });
+
+      $('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        auth = { user: $('u').value.trim(), password: $('p').value };
+        try {
+          await api({ action: 'list' });
+          sessionStorage.setItem('couva_admin', JSON.stringify(auth));
+          $('login').classList.add('hidden'); $('dash').classList.remove('hidden');
+          load();
+        } catch { $('login-err').textContent = 'Usuario o contraseña incorrectos.'; auth = null; }
+      });
+
+      $('logout').addEventListener('click', () => { sessionStorage.removeItem('couva_admin'); location.reload(); });
+      $('refresh').addEventListener('click', load);
+      document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
+        const v = t.dataset.view;
+        document.querySelectorAll('.tab').forEach((x) => { const on = x === t; x.className = 'tab ' + (on ? 'btn-gold !px-5 !py-2 text-sm' : 'rounded-full bg-white px-5 py-2 text-sm font-semibold ring-1 ring-ink/10'); });
+        $('view-leads').classList.toggle('hidden', v !== 'leads');
+        $('view-referidos').classList.toggle('hidden', v !== 'referidos');
+      }));
+
+      // sesión recordada
+      const saved = sessionStorage.getItem('couva_admin');
+      if (saved) { try { auth = JSON.parse(saved); $('login').classList.add('hidden'); $('dash').classList.remove('hidden'); load(); } catch {} }
+    })();</script> </body> </html>
