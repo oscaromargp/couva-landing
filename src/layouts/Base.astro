@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { content, contact, withBase, type Lang } from '../i18n/content';
+import Chatbot from '../components/Chatbot.astro';
 
 interface Props {
   lang: Lang;
@@ -124,6 +125,7 @@ const jsonLd = {
   <body class="bg-cream text-ink antialiased selection:bg-gold/30">
     <slot />
     <script is:inline src={withBase('/couva-forms.js')}></script>
+    <Chatbot />
     {SB_URL && SB_ANON && (
       <script is:inline define:vars={{ SB_URL, SB_ANON }}>
         try {

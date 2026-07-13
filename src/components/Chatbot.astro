@@ -1,0 +1,76 @@
+---
+import { withBase, contact } from '../i18n/content';
+const negociosHref = withBase('/es/negocios');
+const waHref = `${contact.whatsapp}?text=${encodeURIComponent('Hola, quiero información de PardeSantos.')}`;
+const calHref = contact.calendar;
+---
+<!-- CHATBOT LIGERO (sin backend / sin n8n) -->
+<div id="cb" style="display:none" class="fixed bottom-4 right-4 z-[70] font-sans">
+  <!-- Botón flotante -->
+  <button id="cb-toggle" aria-label="Abrir chat" class="grid h-14 w-14 place-items-center rounded-full bg-gold text-ink shadow-gold transition hover:scale-105">
+    <svg id="cb-icon-chat" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linejoin="round"/></svg>
+    <svg id="cb-icon-close" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+  </button>
+
+  <!-- Panel -->
+  <div id="cb-panel" class="absolute bottom-16 right-0 hidden w-[88vw] max-w-sm overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-ink/10">
+    <div class="flex items-center gap-3 bg-ink p-4 text-cream">
+      <div class="grid h-9 w-9 place-items-center rounded-full bg-gold text-ink font-bold">P</div>
+      <div>
+        <div class="font-display font-bold leading-none">PardeSantos</div>
+        <div class="text-xs text-sand/70">Asistente · responde al instante</div>
+      </div>
+    </div>
+    <div id="cb-msgs" class="flex max-h-[52vh] flex-col gap-2 overflow-y-auto bg-cream p-4"></div>
+    <div id="cb-quick" class="flex flex-wrap gap-2 border-t border-ink/10 bg-white p-3"></div>
+  </div>
+</div>
+
+<script is:inline define:vars={{ negociosHref, waHref, calHref, phone: contact.phone }}>
+  (function () {
+    if (location.pathname.includes('/admin')) return;
+    var cb = document.getElementById('cb'); cb.style.display = 'block';
+    var panel = document.getElementById('cb-panel'), msgs = document.getElementById('cb-msgs'), quick = document.getElementById('cb-quick');
+    var iChat = document.getElementById('cb-icon-chat'), iClose = document.getElementById('cb-icon-close');
+    var open = false;
+
+    function bot(html) {
+      var d = document.createElement('div');
+      d.className = 'max-w-[85%] self-start rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-sm text-ink shadow-soft ring-1 ring-ink/5';
+      d.innerHTML = html; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+    }
+    function me(txt) {
+      var d = document.createElement('div');
+      d.className = 'max-w-[85%] self-end rounded-2xl rounded-tr-sm bg-gold px-3 py-2 text-sm font-medium text-ink';
+      d.textContent = txt; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+    }
+    function chips(list) {
+      quick.innerHTML = '';
+      list.forEach(function (c) {
+        var b = document.createElement('button');
+        b.className = 'rounded-full bg-sand/50 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-sand';
+        b.textContent = c.label; b.onclick = function () { c.fn(); }; quick.appendChild(b);
+      });
+    }
+
+    var MENU = [
+      { label: '🏠 Modelos y precios', fn: function () { me('Modelos y precios'); bot('Tenemos 4 modelos:<br>• <b>NOMAD 3×6</b> — $129,000 (obra/bodega)<br>• <b>NAVIK 3×6</b> — $150,000 (comercio/pop-up)<br>• <b>MACAO 6×3</b> — $265,000 (negocio/hospedaje)<br>• <b>COUVA 6×6</b> — $495,000 (residencial)<br><a class="text-sea underline" href="' + negociosHref + '">Ver todos los modelos →</a>'); back(); } },
+      { label: '⏱️ ¿Cuánto tardan?', fn: function () { me('¿Cuánto tardan?'); bot('En <b>semanas</b>, no meses. El plazo exacto te lo confirmamos en la cotización según tu destino.'); back(); } },
+      { label: '💳 ¿Cómo se compra?', fn: function () { me('¿Cómo se compra?'); bot('<b>50% de enganche</b> y <b>50% contra entrega</b>. Aceptamos transferencia y <b>criptomonedas</b> (XRP, USDT, BTC, ETH, TRX). + envío.'); back(); } },
+      { label: '📍 Envío', fn: function () { me('Envío'); bot('Estamos en <b>La Paz, BCS</b> y enviamos a <b>todo México</b>. Te cotizamos el envío a tu destino.'); back(); } },
+      { label: '💬 WhatsApp', fn: function () { window.open(waHref, '_blank'); } },
+    ];
+    function back() { setTimeout(function () { chips([{ label: '↩️ Menú', fn: greet }, { label: '💬 Hablar por WhatsApp', fn: function () { window.open(waHref, '_blank'); } }]); }, 250); }
+    function greet() { chips(MENU); }
+
+    function first() {
+      if (msgs.childElementCount === 0) { bot('¡Hola! 👋 Soy el asistente de <b>PardeSantos</b>. ¿En qué te ayudo?'); greet(); }
+    }
+    document.getElementById('cb-toggle').onclick = function () {
+      open = !open;
+      panel.classList.toggle('hidden', !open);
+      iChat.classList.toggle('hidden', open); iClose.classList.toggle('hidden', !open);
+      if (open) first();
+    };
+  })();
+</script>
