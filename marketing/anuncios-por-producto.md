@@ -1,71 +1,62 @@
-# Anuncios por producto — PardeSantos
+# Anuncios por producto — PardeSantos (NACIONAL)
 
 4 anuncios, cada uno a su público y a su página de destino. Arte en `marketing/creativos/`.
+Copiar y pegar tal cual. Enviamos a todo México.
+
+> Nota: los enlaces quedan vivos cuando el sitio esté publicado (repo Público o Pages → gh-pages).
 
 ---
 
-## 1) COUVA 6×6 — Residencial / inversionista
-**Arte:** `anuncio-couva.jpg` · **Destino:** `/es` (residencial)
-**URL:** `https://oscaromargp.github.io/couva-landing/es?utm_source=facebook&utm_medium=cpc&utm_campaign=couva`
+## 1) COUVA 6×6 — Residencial / inversionista · `anuncio-couva.jpg`
 
-**Texto principal:**
-¿Tu terreno en la costa lleva meses sin darte un solo peso? 🌴
-La casa modular COUVA 6×6 se instala en SEMANAS, lista para habitar o rentar. Precio cerrado $495,000 MXN, sin las sorpresas de la obra.
-👉 Cotiza con envío incluido.
+🏡 Convierte tu terreno en una casa lista para habitar o rentar — en SEMANAS, no en meses.
 
-**Título:** Casa lista en semanas, no en meses
-**Botón:** Más información
-#PuertoEscondido #CasasModulares #Airbnb #InversiónInmobiliaria
+La COUVA 6×6 de PardeSantos llega compacta, se despliega en tu terreno y queda lista. Precio cerrado $495,000 MXN, sin las sorpresas de la obra. Enviamos a todo México. 🇲🇽
+
+👉 Cotiza con envío: https://oscaromargp.github.io/couva-landing/es
+
+#CasasModulares #CasaPrefabricada #Airbnb #InversiónInmobiliaria #BienesRaíces #CasaDeCampo #México #CasaEcológica #TinyHouse #RentaVacacional
 
 ---
 
-## 2) NOMAD 3×6 — Obra y campamentos / constructoras
-**Arte:** `anuncio-nomad.jpg` · **Destino:** `/es/negocios`
-**URL:** `https://oscaromargp.github.io/couva-landing/es/negocios?utm_source=facebook&utm_medium=cpc&utm_campaign=nomad`
+## 2) NOMAD 3×6 — Obra y campamentos / constructoras · `anuncio-nomad.jpg`
 
-**Texto principal:**
-🏗️ ¿Necesitas oficinas de obra, casetas o dormitorios para tu cuadrilla?
-El módulo NOMAD llega y se instala en semanas — aislado, resistente y reubicable. Desde $129,000 MXN por unidad, con descuento por volumen.
-👉 Cotiza tu proyecto.
+🏗️ Oficinas de obra, casetas y dormitorios para tu cuadrilla — instalados en semanas.
 
-**Título:** Casetas de obra listas en semanas
-**Botón:** Cotizar
-#Construcción #Obra #Desarrolladores #ModularesIndustriales #Campamentos
+El módulo NOMAD de PardeSantos es aislado, resistente y reubicable. Desde $129,000 MXN por unidad, con descuento por volumen. Envío a todo el país. 🇲🇽
+
+👉 Cotiza tu proyecto: https://oscaromargp.github.io/couva-landing/es/negocios
+
+#Construcción #Obra #CasetasDeObra #Constructoras #Desarrolladores #Infraestructura #Modulares #México #Ingeniería #Campamentos
 
 ---
 
-## 3) MACAO 6×3 — Negocio y hospedaje
-**Arte:** `anuncio-macao.jpg` · **Destino:** `/es/negocios`
-**URL:** `https://oscaromargp.github.io/couva-landing/es/negocios?utm_source=facebook&utm_medium=cpc&utm_campaign=macao`
+## 3) MACAO 6×3 — Negocio y hospedaje · `anuncio-macao.jpg`
 
-**Texto principal:**
-🏨 Abre tu suite de hotel, café, showroom u oficina SIN obra.
-El módulo MACAO 6×3 llega con acabados premium (metal tallado, aluminio puente roto), listo para operar. $265,000 MXN, entrega en semanas.
-👉 Cotiza tu proyecto.
+🏨 Abre tu suite de hotel, café, showroom u oficina — SIN obra.
 
-**Título:** Tu local o suite, sin obra
-**Botón:** Cotizar
-#HotelBoutique #Airbnb #Cafetería #Showroom #NegocioModular
+El módulo MACAO 6×3 de PardeSantos llega con acabados premium, listo para operar. $265,000 MXN, entrega en semanas. Enviamos a todo México. 🇲🇽
+
+👉 Cotiza tu proyecto: https://oscaromargp.github.io/couva-landing/es/negocios
+
+#HotelBoutique #Airbnb #Cafetería #Showroom #Emprendedores #NegocioModular #Oficinas #México #Franquicias #Hospitalidad
 
 ---
 
-## 4) SOCIOS / BROKERS — Recluta socios (comisión)
-**Arte:** `anuncio-socios.jpg` · **Destino:** `/es/socios`
-**URL:** `https://oscaromargp.github.io/couva-landing/es/socios?utm_source=facebook&utm_medium=cpc&utm_campaign=socios`
+## 4) SOCIOS / BROKERS — Gana comisión · `anuncio-socios.jpg`
 
-**Texto principal:**
-💼 Inmobiliarias, notarios y gestores: gana **7% a 10% de comisión** ($34,650+ por venta) recomendando casas modulares.
-Nosotros cerramos, tú cobras. Recibes tu link único y tu kit de ventas.
-👉 Regístrate gratis.
+💼 Gana 7% a 10% de comisión ($34,650+ por venta) recomendando casas modulares.
 
-**Título:** Gana 7–10% por recomendar
-**Botón:** Registrarte
-#BienesRaíces #Comisiones #Inmobiliaria #Notarios #IngresosExtra
+¿Eres inmobiliaria, notario, gestor o tienes contactos? Tú conectas, nosotros cerramos, tú cobras. Recibes tu link único y tu kit de ventas. En todo México. 🇲🇽
+
+👉 Regístrate gratis: https://oscaromargp.github.io/couva-landing/es/socios
+
+#BienesRaíces #Inmobiliaria #Comisiones #Notarios #IngresosExtra #Brokers #GanaDinero #México #NegocioPropio #Emprender
 
 ---
 
-### Consejo de segmentación
-- **COUVA** → intereses: bienes raíces, Airbnb, inversión; geo costa + grandes ciudades (inversionistas foráneos).
-- **NOMAD** → constructoras, desarrolladores, ingeniería civil; geo BCS/nacional.
-- **MACAO** → hotelería, restaurantes, emprendedores; geo turística.
-- **SOCIOS** → agentes inmobiliarios, "bienes raíces", administradores de propiedades.
+### Segmentación (a nivel nacional)
+- COUVA → intereses: bienes raíces, Airbnb, inversión inmobiliaria, casas de campo. Todo México.
+- NOMAD → constructoras, desarrolladores, ingeniería civil, gerentes de obra. Todo México.
+- MACAO → hotelería, restaurantes, emprendedores, franquicias. Ciudades y zonas turísticas.
+- SOCIOS → agentes inmobiliarios, administradores de propiedades, notarios. Todo México.
