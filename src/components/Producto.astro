@@ -1,0 +1,214 @@
+---
+import { content, contact, withBase } from '../i18n/content';
+import { productos, contactoProducto } from '../i18n/productos';
+
+interface Props { slug: string }
+const { slug } = Astro.props;
+const p = productos[slug];
+const t = content.es;
+const m = (x: string) => withBase(x);
+const homeHref = withBase('/es');
+const negociosHref = withBase('/es/negocios');
+const privacyHref = withBase('/es/aviso-de-privacidad');
+const WEBHOOK = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.zxyw.site/webhook/couva-lead';
+const CAL = contact.calendar;
+const waHref = `${contact.whatsapp}?text=${encodeURIComponent('Hola, me interesa el modelo ' + p.name + ' de PardeSantos.')}`;
+
+const icons: Record<string, string> = {
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke-linecap="round"/>',
+  clock: '<path d="M12 7v5l3 2" stroke-linecap="round"/><circle cx="12" cy="12" r="9"/>',
+  shield: '<path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/>',
+  bolt: '<path d="M13 2L4 14h6l-1 8 9-12h-6z" stroke-linejoin="round"/>',
+  sofa: '<path d="M4 11V8a2 2 0 012-2h12a2 2 0 012 2v3"/><path d="M2 13a2 2 0 012-2 2 2 0 012 2v3h12v-3a2 2 0 012-2 2 2 0 012 2v5H2z"/>',
+  kitchen: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 3v6M4 9h16" stroke-linecap="round"/>',
+};
+const specGroups: [string, [string, string][]][] = [
+  ['Dimensiones', p.dimensiones],
+  ['Materiales', p.materiales],
+  ['Eléctrico / Embalaje', p.electrico],
+];
+---
+
+<!-- NAV -->
+<header class="bg-ink">
+  <nav class="wrap flex items-center justify-between py-4">
+    <a href={homeHref} class="flex items-center gap-2 font-display text-xl font-bold text-white">
+      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"/><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"/></svg>
+      PardeSantos
+    </a>
+    <div class="flex items-center gap-3">
+      <a href={negociosHref} class="hidden text-sm text-sand/80 hover:text-gold sm:block">← Ver todos los modelos</a>
+      <a href="#cotizar" class="btn-gold !px-5 !py-2.5 text-sm">Cotizar</a>
+    </div>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="relative flex min-h-[80vh] items-end overflow-hidden bg-ink">
+  <img src={m(p.hero)} alt={p.name} class="absolute inset-0 h-full w-full object-cover opacity-70" />
+  <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/70 to-ink/20"></div>
+  <div class="wrap relative z-10 pb-14 pt-40 text-cream">
+    <p class="eyebrow reveal">{p.eyebrow}</p>
+    <h1 class="reveal mt-3 font-display text-5xl font-bold leading-none text-white sm:text-6xl md:text-7xl">{p.name}</h1>
+    <p class="reveal mt-4 max-w-2xl text-2xl font-medium text-sand/95">{p.tagline}</p>
+    <p class="reveal mt-2 text-sand/70">{p.size}</p>
+    <div class="reveal mt-6 flex flex-wrap items-center gap-4">
+      <span class="rounded-2xl bg-gold px-6 py-3 font-display text-2xl font-bold text-ink">{p.price} <span class="text-sm font-normal">MXN + envío</span></span>
+      <a href="#cotizar" class="btn-ghost">Cotizar este modelo</a>
+    </div>
+  </div>
+</section>
+
+<!-- INTRO + DESTACADOS -->
+<section class="bg-cream py-20 sm:py-28">
+  <div class="wrap grid gap-12 lg:grid-cols-2">
+    <div>
+      <h2 class="reveal text-3xl font-bold sm:text-4xl">¿Por qué el {p.name}?</h2>
+      <p class="reveal mt-4 text-lg leading-relaxed text-ink/75">{p.intro}</p>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {p.destacados.map((d) => (
+        <div class="reveal card">
+          <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-sea/10 text-sea">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" set:html={icons[d.icon]} />
+          </div>
+          <h3 class="font-bold">{d.title}</h3>
+          <p class="mt-1 text-sm text-ink/70">{d.body}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- GALERÍA -->
+<section class="bg-ink py-20 text-cream sm:py-28">
+  <div class="wrap">
+    <h2 class="reveal text-3xl font-bold sm:text-4xl">Conócelo por dentro y por fuera</h2>
+    <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {p.gallery.map((g) => (
+        <img src={m(g)} alt={p.name} loading="lazy" class="reveal aspect-[4/3] w-full rounded-2xl object-cover shadow-soft ring-1 ring-white/10" />
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- PARA QUIÉN -->
+<section class="bg-cream py-20 sm:py-28">
+  <div class="wrap grid gap-10 lg:grid-cols-2 lg:items-center">
+    <div>
+      <p class="eyebrow reveal">¿PARA QUÉ SIRVE?</p>
+      <h2 class="reveal mt-3 text-3xl font-bold sm:text-4xl">Pensado para tu proyecto</h2>
+      <ul class="mt-6 space-y-3">
+        {p.paraQuien.map((u) => (
+          <li class="reveal flex items-start gap-3 text-lg text-ink/80">
+            <span class="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gold text-ink text-sm">✓</span>{u}
+          </li>
+        ))}
+      </ul>
+    </div>
+    <div class="reveal">
+      <img src={m(p.gallery[1] || p.hero)} alt={p.name} loading="lazy" class="aspect-[4/3] w-full rounded-3xl object-cover shadow-soft" />
+    </div>
+  </div>
+</section>
+
+<!-- FICHA TÉCNICA -->
+<section class="bg-deep py-20 text-cream sm:py-28">
+  <div class="wrap grid gap-10 lg:grid-cols-2">
+    <div>
+      <h2 class="reveal text-3xl font-bold sm:text-4xl">Ficha técnica</h2>
+      <div class="mt-8 space-y-6">
+        {specGroups.map(([titulo, filas]) => (
+          <div class="reveal">
+            <div class="text-sm font-bold uppercase tracking-widest text-gold">{titulo}</div>
+            <dl class="mt-2 divide-y divide-white/10 rounded-2xl bg-white/5 ring-1 ring-white/10">
+              {filas.map(([k, v]) => (
+                <div class="flex justify-between gap-4 px-4 py-2.5 text-sm">
+                  <dt class="text-sand/70">{k}</dt><dd class="text-right font-semibold text-white">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div class="reveal">
+      <img src={m(p.ficha)} alt={`Ficha ${p.name}`} loading="lazy" class="w-full rounded-2xl bg-white object-contain p-2 shadow-soft" />
+    </div>
+  </div>
+</section>
+
+<!-- COTIZAR -->
+<section id="cotizar" class="bg-cream py-20 sm:py-28">
+  <div class="wrap grid gap-10 lg:grid-cols-2 lg:items-center">
+    <div>
+      <div class="reveal inline-flex items-baseline gap-3 rounded-2xl bg-ink px-6 py-4 text-cream">
+        <span class="font-display text-4xl font-bold text-gold">{p.price}</span>
+        <span class="text-sm text-sand/80">MXN + envío</span>
+      </div>
+      <p class="reveal mt-4 text-lg font-semibold text-ink">{contactoProducto.pago}</p>
+      <p class="reveal mt-1 text-ink/70">{contactoProducto.cripto}</p>
+      <div class="reveal mt-6 flex flex-wrap gap-3">
+        <a href={CAL} target="_blank" rel="noopener" class="btn-dark">Agendar llamada</a>
+        <a href={waHref} target="_blank" rel="noopener" class="btn-ghost !text-ink !border-ink/25 hover:!bg-ink/5">WhatsApp</a>
+      </div>
+    </div>
+    <div class="reveal card">
+      <h3 class="text-xl font-bold">Cotiza el {p.name}</h3>
+      <form id="producto-form" class="mt-5 space-y-4" data-modelo={p.name}>
+        <input type="text" name="company" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+        <div><label class="label">{t.leadForm.f_name}</label><input required name="nombre" class="field" /></div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div><label class="label">{t.leadForm.f_phone}</label><input required name="telefono" class="field" /></div>
+          <div><label class="label">{t.leadForm.f_email}</label><input required type="email" name="email" class="field" /></div>
+        </div>
+        <div><label class="label">{t.leadForm.f_msg}</label><textarea name="mensaje" rows="2" class="field" placeholder="¿Cuántas unidades? ¿Para qué uso?"></textarea></div>
+        <label class="flex items-start gap-2 text-sm text-ink/70">
+          <input required type="checkbox" name="consentimiento" class="mt-1" />
+          <span>{t.leadForm.consent} <a href={privacyHref} class="underline">{t.footer.privacy}</a></span>
+        </label>
+        <button type="submit" class="btn-gold w-full">Solicitar cotización</button>
+        <p class="form-status text-sm"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-ink py-10 text-sand/70">
+  <div class="wrap flex flex-wrap items-center justify-between gap-4 text-sm">
+    <span>© {new Date().getFullYear()} PardeSantos · {t.footer.rights}</span>
+    <div class="flex flex-wrap gap-x-5 gap-y-1">
+      <a href={negociosHref} class="hover:text-gold">Todos los modelos</a>
+      <a href={homeHref} class="hover:text-gold">Inicio</a>
+      <a href={privacyHref} class="hover:text-gold">{t.footer.privacy}</a>
+    </div>
+  </div>
+</footer>
+
+<script define:vars={{ WEBHOOK, okMsg: t.leadForm.ok, errMsg: t.leadForm.err, sending: t.leadForm.sending }}>
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+  const params = new URLSearchParams(location.search);
+  const utm = { utm_source: params.get('utm_source') || '', utm_medium: params.get('utm_medium') || '', utm_campaign: params.get('utm_campaign') || '', referrer: document.referrer || '', landing_path: location.pathname };
+  let ref = params.get('ref'); if (ref) { try { localStorage.setItem('couva_ref', ref); } catch (e) {} } else { try { ref = localStorage.getItem('couva_ref'); } catch (e) { ref = null; } }
+
+  const form = document.getElementById('producto-form');
+  const status = form.querySelector('.form-status');
+  const btn = form.querySelector('button[type=submit]');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (form.company.value) return;
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.consentimiento = !!form.querySelector('[name=consentimiento]').checked;
+    const payload = { form: 'negocios', idioma: 'es', modelo: form.dataset.modelo, cta: 'producto', ref_codigo: ref || null, ...utm, ...data, ts: new Date().toISOString() };
+    const orig = btn.textContent; btn.disabled = true; btn.textContent = sending; status.textContent = '';
+    try {
+      const res = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error(res.status);
+      status.style.color = '#0F7A4F'; status.textContent = okMsg; form.reset();
+    } catch (err) { status.style.color = '#B4442E'; status.textContent = errMsg; }
+    finally { btn.disabled = false; btn.textContent = orig; }
+  });
+</script>

@@ -1,0 +1,16 @@
+---
+import Base from '../../layouts/Base.astro';
+import Producto from '../../components/Producto.astro';
+import { productos } from '../../i18n/productos';
+
+export function getStaticPaths() {
+  return Object.values(productos).map((p) => ({ params: { modelo: p.slug }, props: { slug: p.slug } }));
+}
+
+const { slug } = Astro.props as { slug: string };
+const p = productos[slug];
+const desc = `${p.tagline} ${p.price} MXN + envío. ${p.intro.slice(0, 110)}`;
+---
+<Base lang="es" title={`${p.name} · ${p.price} MXN | PardeSantos`} description={desc} canonicalSlug={`/es/${slug}`}>
+  <Producto slug={slug} />
+</Base>

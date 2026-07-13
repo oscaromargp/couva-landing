@@ -477,11 +477,12 @@ export const content = {
       modelosTitle: 'Compara los modelos',
       modelosSub: 'Del más funcional al residencial premium. Todos con pago 50/50 y opción de cripto.',
       modelos: [
-        { name: 'NOMAD 3×6', img: '/media/fichas/nomad.jpg', price: '$129,000', tag: 'El más funcional', feat: ['5.95 × 3.00 m · plegable', 'Sin cocina · aislado (lana de roca)', 'Ideal: obra, bodega, consultorio'] },
-        { name: 'MACAO 6×3', img: '/media/fichas/macao.jpg', price: '$265,000', tag: 'Premium compacto', feat: ['3.00 × 6.00 m · cocineta y clóset', 'Baño opcional · acabados premium', 'Ideal: hotel, café, showroom, oficina'] },
-        { name: 'COUVA 6×6', img: '/media/fichas/couva.jpg', price: '$495,000', tag: 'Residencial expansible', feat: ['Se despliega a 6.30 m · 2 recámaras', '1 baño · salón · SPC', 'Ideal: Airbnb, vivienda, desarrollos'] },
+        { name: 'NOMAD 3×6', slug: 'nomad', img: '/media/productos/nomad/nomad-1.webp', price: '$129,000', tag: 'El más funcional', feat: ['5.95 × 3.00 m · plegable', 'Sin cocina · aislado (lana de roca)', 'Ideal: obra, bodega, consultorio'] },
+        { name: 'NAVIK 3×6', slug: 'navik', img: '/media/productos/navik/navik-1.jpg', price: '$150,000', tag: 'Persiana enrollable', feat: ['5.95 × 3.00 m · cortina de acero', 'Cierra hermético · seguridad', 'Ideal: retail, pop-up, taller, bodega'] },
+        { name: 'MACAO 6×3', slug: 'macao', img: '/media/productos/macao/macao-1.jpg', price: '$265,000', tag: 'Premium compacto', feat: ['3.00 × 6.00 m · cocineta y clóset', 'Baño opcional · acabados premium', 'Ideal: hotel, café, showroom, oficina'] },
+        { name: 'COUVA 6×6', slug: 'couva', img: '/media/productos/couva/couva-1.jpg', price: '$495,000', tag: 'Residencial expansible', feat: ['Se despliega a 6.30 m · 2 recámaras', '1 baño · salón · SPC', 'Ideal: Airbnb, vivienda, desarrollos'] },
       ],
-      verFicha: 'Ver ficha',
+      verFicha: 'Ver modelo',
       hooksTitle: 'Por qué comprarle a PardeSantos',
       hooks: [
         { icon: 'bolt', title: 'Descuento por volumen', body: 'Entre más unidades, mejor precio. Cotizamos tu proyecto completo.' },
@@ -970,11 +971,12 @@ export const content = {
       modelosTitle: 'Compare the models',
       modelosSub: 'From the most functional to premium residential. All with 50/50 payment and a crypto option.',
       modelos: [
-        { name: 'NOMAD 3×6', img: '/media/fichas/nomad.jpg', price: '$129,000', tag: 'Most functional', feat: ['5.95 × 3.00 m · foldable', 'No kitchen · insulated (rock wool)', 'Ideal: jobsite, storage, clinic'] },
-        { name: 'MACAO 6×3', img: '/media/fichas/macao.jpg', price: '$265,000', tag: 'Compact premium', feat: ['3.00 × 6.00 m · kitchenette & closet', 'Optional bath · premium finishes', 'Ideal: hotel, café, showroom, office'] },
-        { name: 'COUVA 6×6', img: '/media/fichas/couva.jpg', price: '$495,000', tag: 'Expandable residential', feat: ['Unfolds to 6.30 m · 2 bedrooms', '1 bath · living room · SPC', 'Ideal: Airbnb, home, developments'] },
+        { name: 'NOMAD 3×6', slug: 'nomad', img: '/media/productos/nomad/nomad-1.webp', price: '$129,000', tag: 'Most functional', feat: ['5.95 × 3.00 m · foldable', 'No kitchen · insulated (rock wool)', 'Ideal: jobsite, storage, clinic'] },
+        { name: 'NAVIK 3×6', slug: 'navik', img: '/media/productos/navik/navik-1.jpg', price: '$150,000', tag: 'Roll-up shutter', feat: ['5.95 × 3.00 m · steel roll-up door', 'Locks tight · security', 'Ideal: retail, pop-up, workshop, storage'] },
+        { name: 'MACAO 6×3', slug: 'macao', img: '/media/productos/macao/macao-1.jpg', price: '$265,000', tag: 'Compact premium', feat: ['3.00 × 6.00 m · kitchenette & closet', 'Optional bath · premium finishes', 'Ideal: hotel, café, showroom, office'] },
+        { name: 'COUVA 6×6', slug: 'couva', img: '/media/productos/couva/couva-1.jpg', price: '$495,000', tag: 'Expandable residential', feat: ['Unfolds to 6.30 m · 2 bedrooms', '1 bath · living room · SPC', 'Ideal: Airbnb, home, developments'] },
       ],
-      verFicha: 'View spec sheet',
+      verFicha: 'View model',
       hooksTitle: 'Why buy from PardeSantos',
       hooks: [
         { icon: 'bolt', title: 'Volume discount', body: 'The more units, the better the price. We quote your whole project.' },
