@@ -832,8 +832,7 @@ const icons: Record<string, string> = {
       const original = btn.textContent;
       btn.disabled = true; btn.textContent = sending; status.textContent = '';
       try {
-        const res = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (!res.ok) throw new Error(res.status);
+        await window.couvaSubmit(payload);
         trackConversion(formType, eventId);
         status.style.color = '#0F7A4F'; status.textContent = form.dataset.successMsg || okMsg; form.reset();
         // Descarga gateada: al enviar, dispara el PDF

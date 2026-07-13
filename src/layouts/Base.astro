@@ -123,6 +123,7 @@ const jsonLd = {
   </head>
   <body class="bg-cream text-ink antialiased selection:bg-gold/30">
     <slot />
+    <script is:inline src={withBase('/couva-forms.js')}></script>
     {SB_URL && SB_ANON && (
       <script is:inline define:vars={{ SB_URL, SB_ANON }}>
         try {

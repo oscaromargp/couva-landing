@@ -205,8 +205,7 @@ const specGroups: [string, [string, string][]][] = [
     const payload = { form: 'negocios', idioma: 'es', modelo: form.dataset.modelo, cta: 'producto', ref_codigo: ref || null, ...utm, ...data, ts: new Date().toISOString() };
     const orig = btn.textContent; btn.disabled = true; btn.textContent = sending; status.textContent = '';
     try {
-      const res = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!res.ok) throw new Error(res.status);
+      await window.couvaSubmit(payload);
       status.style.color = '#0F7A4F'; status.textContent = okMsg; form.reset();
     } catch (err) { status.style.color = '#B4442E'; status.textContent = errMsg; }
     finally { btn.disabled = false; btn.textContent = orig; }

@@ -353,8 +353,7 @@ const icons: Record<string, string> = {
     const payload = { form: 'socio', idioma: lang, codigo, ...utm, ...data, ts: new Date().toISOString() };
     const orig = btn.textContent; btn.disabled = true; btn.textContent = sending; status.textContent = '';
     try {
-      const res = await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!res.ok) throw new Error(res.status);
+      await window.couvaSubmit(payload);
       const link = location.origin + homeRef + '?ref=' + codigo;
       $('socio-link').value = link;
       form.classList.add('hidden');

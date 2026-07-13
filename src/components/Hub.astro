@@ -123,3 +123,14 @@ const icons: Record<string, string> = {
     </div>
   </div>
 </footer>
+
+<script>
+  // Activa las animaciones de aparición (.reveal). Fallback: si algo falla, muestra todo.
+  const els = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  els.forEach((el) => io.observe(el));
+  // Red de seguridad: revela todo tras 1.2s por si el observer no dispara
+  setTimeout(() => els.forEach((el) => el.classList.add('in')), 1200);
+</script>
