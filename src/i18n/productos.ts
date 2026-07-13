@@ -123,3 +123,96 @@ export const contactoProducto = {
   pago: '50% de enganche · 50% contra entrega',
   cripto: 'Aceptamos pesos y criptomonedas (XRP, USDT, BTC, ETH, TRX). + envío.',
 };
+
+export interface Extras {
+  comparativa?: { title: string; sub: string; cols: [string, string, string]; rows: [string, string, string][] };
+  honestidad: string;
+  faq: { q: string; a: string }[];
+  testimonios: { quote: string; name: string; role: string }[];
+}
+
+export const productoExtras: Record<string, Extras> = {
+  nomad: {
+    comparativa: {
+      title: 'NOMAD vs. contenedor de obra adaptado',
+      sub: 'El costo real de adaptar un contenedor casi siempre supera al de un módulo hecho para eso.',
+      cols: ['', 'NOMAD 3×6', 'Contenedor adaptado'],
+      rows: [
+        ['Precio', '$129,000 (cerrado)', 'Contenedor + adaptación + aislamiento: sube rápido'],
+        ['Aislamiento', 'Lana de roca 50 mm de fábrica', 'Hay que forrarlo (costo extra) o se calienta'],
+        ['Tiempo', 'Semanas', 'Semanas/meses de adaptación'],
+        ['Movilidad', 'Plegable y ligero (1,100 kg)', 'Pesado y fijo'],
+      ],
+    },
+    honestidad: 'Seamos claros: no es lo más barato del mercado, pero es lo más rápido, funcional y fácil de mover. Pagas por algo listo para usar, no por una caja que hay que adaptar.',
+    faq: [
+      { q: '¿No me sale más barato un contenedor?', a: 'En papel a veces sí, pero un contenedor hay que aislarlo y adaptarlo — ahí se dispara el costo. El NOMAD ya viene aislado y listo, con precio cerrado.' },
+      { q: '¿Aguanta el clima de la costa?', a: 'Sí: chapa de acero galvanizado y lana de roca de 50 mm para el calor y la humedad. Te entregamos las especificaciones por escrito.' },
+      { q: '¿Lo puedo mover después?', a: 'Sí, es plegable y ligero (1,100 kg). Ideal para obra: lo instalas, y cuando termina el proyecto lo llevas a la siguiente.' },
+      { q: '¿En cuánto lo tengo?', a: 'En semanas. Te confirmamos el plazo exacto en la cotización según tu destino.' },
+      { q: '¿Trae cocina o baño?', a: 'Este modelo es sin cocina (módulo funcional). Si necesitas baño/cocina, te recomendamos MACAO o COUVA.' },
+    ],
+    testimonios: [
+      { quote: 'Lo usé como oficina de obra y bodega. No es lo más barato, pero llegó rápido y lo muevo a mi siguiente proyecto. Cumplió.', name: 'Cliente constructor', role: 'Oaxaca · (ejemplo — reemplazar por testimonio real)' },
+    ],
+  },
+  navik: {
+    comparativa: {
+      title: 'NAVIK vs. contenedor forrado',
+      sub: 'En la costa están cobrando hasta $300,000 por forrar un contenedor. Compara.',
+      cols: ['', 'NAVIK 3×6', 'Contenedor forrado'],
+      rows: [
+        ['Precio', '$150,000 (cerrado)', 'Hasta $300,000'],
+        ['Tiempo de montaje', 'Semanas', '~30 días de adaptación'],
+        ['Qué es', 'Módulo hecho para comercio, con persiana de acero', 'Caja de barco adaptada'],
+        ['Aislamiento', 'Lana de roca de fábrica', 'Se calienta si no se forra a fondo'],
+      ],
+    },
+    honestidad: 'La verdad sin adornos: por la mitad de lo que cuesta forrar un contenedor, tienes un módulo diseñado para vender — con persiana de seguridad y aislado de fábrica. Rápido y funcional.',
+    faq: [
+      { q: '¿Por qué conviene sobre un contenedor forrado?', a: 'Un contenedor forrado en la zona llega a $300,000 y 30 días. El NAVIK cuesta $150,000, está hecho para comercio (persiana de acero) y llega en semanas.' },
+      { q: '¿Sirve para café, tienda o taller?', a: 'Sí. La persiana enrollable abre de cara al público y cierra hermético de noche. Ideal para retail, pop-up, taller o caseta de seguridad.' },
+      { q: '¿Es seguro?', a: 'La cortina es de acero de 3 mm sobre un dintel a prueba de robo. Cierra completamente al terminar la jornada.' },
+      { q: '¿Aguanta el clima de playa?', a: 'Sí: acero galvanizado y lana de roca de 50 mm. Especificaciones por escrito.' },
+      { q: '¿Cuánto tarda?', a: 'Semanas, no los ~30 días de adaptar un contenedor. Plazo exacto en tu cotización.' },
+    ],
+    testimonios: [
+      { quote: 'Iba a forrar un contenedor y me salía carísimo. Con el NAVIK puse mi local por la mitad y en menos tiempo. No es regalado, pero es lo más rentable.', name: 'Cliente comercio', role: 'Costa de Oaxaca · (ejemplo — reemplazar por testimonio real)' },
+    ],
+  },
+  macao: {
+    comparativa: {
+      title: 'MACAO vs. remodelar un local',
+      sub: 'Abrir sin obra: menos tiempo, menos sorpresas.',
+      cols: ['', 'MACAO 6×3', 'Local remodelado'],
+      rows: [
+        ['Precio', '$265,000 (cerrado)', 'Renta + remodelación + tiempo'],
+        ['Tiempo', 'Semanas, listo para operar', 'Meses de obra'],
+        ['Acabados', 'Premium de fábrica', 'Dependen del contratista'],
+        ['Movilidad', 'Se puede reubicar', 'Fijo al inmueble'],
+      ],
+    },
+    honestidad: 'No es la opción más económica, pero es la más rápida y con mejor imagen: llega con acabados premium y listo para operar. Ideal cuando el tiempo y la presentación importan.',
+    faq: [
+      { q: '¿Ya viene listo para operar?', a: 'Sí: cocineta, clóset y baño opcional, con acabados premium (metal tallado, aluminio puente roto). Solo conexiones finales en sitio.' },
+      { q: '¿Para qué negocios sirve?', a: 'Suite de Airbnb/hotel boutique, café con barra, showroom, oficina o estudio de lujo.' },
+      { q: '¿Lo puedo mover?', a: 'Sí, es modular; se puede reubicar si cambias de terreno o proyecto.' },
+      { q: '¿Cuánto tarda?', a: 'Semanas. Te confirmamos el plazo exacto en la cotización.' },
+    ],
+    testimonios: [
+      { quote: 'Lo puse como café y la imagen quedó de otro nivel, sin meses de obra. No es lo más barato, pero abrí rapidísimo.', name: 'Cliente hospedaje/comercio', role: 'Puerto Escondido · (ejemplo — reemplazar por testimonio real)' },
+    ],
+  },
+  couva: {
+    honestidad: 'No es la casa más barata por metro, pero es la de mejor retorno: llega en semanas, con precio cerrado, y tu terreno empieza a generar antes. Rápida, funcional y lista para rentar.',
+    faq: [
+      { q: '¿Es más barata que construir?', a: 'El precio por metro es similar a una construcción media, pero sin los sobrecostos ni los 6–12 meses de obra. La ventaja es el tiempo y la certeza de precio.' },
+      { q: '¿Se expande de verdad?', a: 'Sí: viaja a 2.20 m y se despliega a 6.30 m en sitio, triplicando su superficie.' },
+      { q: '¿Sirve para Airbnb?', a: '2 recámaras, baño y salón con acabados premium — lista para rentar en cuanto se instala.' },
+      { q: '¿Aguanta el clima costero?', a: 'Panel EPS de 75 mm y chapa con protección para ambiente marino. Especificaciones por escrito.' },
+    ],
+    testimonios: [
+      { quote: 'La renté en Airbnb casi de inmediato. No fue la más barata, pero empezó a generarme rápido. Valió la pena.', name: 'Cliente inversionista', role: 'La Paz / La Ventana, BCS · (ejemplo — reemplazar por real)' },
+    ],
+  },
+};
