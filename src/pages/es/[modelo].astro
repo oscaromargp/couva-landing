@@ -4,7 +4,10 @@ import Producto from '../../components/Producto.astro';
 import { productos } from '../../i18n/productos';
 
 export function getStaticPaths() {
-  return Object.values(productos).map((p) => ({ params: { modelo: p.slug }, props: { slug: p.slug } }));
+  // 'couva' tiene su propia página residencial completa (/es/couva.astro)
+  return Object.values(productos)
+    .filter((p) => p.slug !== 'couva')
+    .map((p) => ({ params: { modelo: p.slug }, props: { slug: p.slug } }));
 }
 
 const { slug } = Astro.props as { slug: string };

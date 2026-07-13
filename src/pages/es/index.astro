@@ -1,7 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
-import Landing from '../../components/Landing.astro';
+import Hub from '../../components/Hub.astro';
+import { content } from '../../i18n/content';
+const h = content.es.hub;
 ---
-<Base lang="es">
-  <Landing lang="es" />
+<Base lang="es" title={h.metaTitle} description={h.metaDesc}>
+  <Hub lang="es" />
 </Base>
