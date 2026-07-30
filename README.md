@@ -5,7 +5,7 @@
 <h1 align="center">COUVA 6×6 — Landing Premium (PardeSantos)</h1>
 
 <p align="center">
-  <strong>Landing page bilingüe (ES/EN) de alta conversión para vender la casa modular expansible COUVA 6×6, con captación de leads automatizada vía n8n + Supabase.</strong>
+  <strong>Landing page bilingüe (ES/EN) de alta conversión para vender la casa modular expansible COUVA 6×6, con chatbot de IA y captación de leads automatizada vía n8n + OpenRouter + Supabase.</strong>
 </p>
 
 <p align="center">
@@ -64,7 +64,8 @@ El copy está construido sobre un análisis real de mercado (FODA, ROI comparati
 | ✍️ Copy persuasivo blindado | Dolor → solución → ROI → cierre, sin promesas que expongan la campaña |
 | 📈 Calculadora de ROI | El visitante calcula el costo de tener su terreno parado (con disclaimer) |
 | 🤝 Programa de referidos 7% | Sección + formulario para brokers, agentes, notarios y agentes municipales |
-| 🔗 SEO + Open Graph | Imagen social 1200×630 por idioma, JSON-LD, sitemap y canonical |
+| 🤖 Chatbot de IA | Widget flotante → n8n + **OpenRouter**: asesor comercial que responde precios/materiales/tiempos y captura al prospecto (con fallback offline a menú + WhatsApp) |
+| 🔗 SEO + Open Graph | Imagen social 1200×630 por idioma, JSON-LD (Schema.org `Product`), sitemap y canonical |
 | 💸 Pago con cripto | XRP, USDT, TRX, BTC y ETH, con precio anclado en MXN |
 | 🛡️ Captación segura | Formularios → n8n → Supabase con RLS (los datos no se pueden leer públicamente) |
 | 📲 Multicanal | Agenda (Google Calendar), WhatsApp, correo y formularios en una sola página |
@@ -79,7 +80,9 @@ El copy está construido sobre un análisis real de mercado (FODA, ROI comparati
   <img src="assets/screenshot-3.jpg" alt="Exterior COUVA 6×6" width="45%"/>
 </p>
 
-> ¿Quieres el demo en vivo? Despliega en segundos con Netlify/Vercel/Cloudflare Pages (ver [Comenzando](#-comenzando)).
+> **🔴 En vivo:** **https://couva.148-72-153-91.sslip.io** — desplegado en Coolify (VPS) detrás de Traefik con HTTPS automático (Let's Encrypt), gzip y cache de assets.
+>
+> ¿Quieres tu propia copia? Despliega en segundos con `deploy/deploy.sh` (ver [Despliegue](#-despliegue)) o con Netlify/Vercel/Cloudflare Pages.
 
 ---
 
@@ -89,17 +92,21 @@ El copy está construido sobre un análisis real de mercado (FODA, ROI comparati
 Redes sociales (OG image + texto)
         │
         ▼
-Landing Astro (ES/EN) ── estática, SEO, rápida
-        │  formularios (lead + referidos)
-        ▼
-Webhook n8n  ── honeypot + validación
-        │
-        ├─► Supabase   (tablas leads / referidos, RLS insert-only)
-        ├─► Google Sheets  (espejo en vivo)*
-        ├─► Gmail / Telegram (alerta)*
+Landing Astro (ES/EN) ─ estática, SEO, servida por Nginx (gzip+cache) tras Traefik/Coolify
+        │                                   │
+        │ formularios (lead + referidos)    │ chat (mensajes del visitante)
+        ▼                                   ▼
+Webhook n8n /couva-lead            Webhook n8n /couva-chat
+   honeypot + validación             AI Agent + memoria por sessionId
+        │                                   │
+        ├─► Supabase (leads/referidos,      ├─► OpenRouter (LLM) ─ system prompt "Asesor COUVA"
+        │   RLS insert-only)                ├─► detecta datos de contacto → notifica lead
+        ├─► Telegram (alerta instantánea)*  └─► Respuesta {"reply": "..."} al navegador
+        ├─► Google Sheets / Gmail (espejo)*
         └─► Respuesta 200 al navegador
 ```
-<sub>* La notificación es best-effort (`continueOnFail`): si un canal falla, el lead nunca se pierde.</sub>
+<sub>* La notificación es best-effort (`continueOnFail`): si un canal falla, el lead nunca se pierde.
+Los **secretos** (OpenRouter API key, token del bot de Telegram) viven **solo dentro de n8n** como credenciales; el frontend nunca los toca.</sub>
 
 ### Estructura del proyecto
 
@@ -118,7 +125,11 @@ stellar-couva-landing/
 │       ├── es/ · en/     # index + páginas legales por idioma
 │       └── index.astro   # Redirección según idioma del navegador
 ├── n8n/
-│   └── couva-lead-workflow.json   # Workflow exportado (importable)
+│   ├── couva-lead-workflow.json   # Captación de leads → Supabase/Telegram
+│   └── couva-chat-workflow.json   # Cerebro de chat IA (AI Agent + OpenRouter)
+├── deploy/
+│   ├── deploy.sh                  # Deploy a Coolify/VPS (parametrizable por marca)
+│   └── nginx.conf                 # gzip + cache de assets
 └── .env.example
 ```
 
@@ -160,19 +171,52 @@ stellar-couva-landing/
    npm run build   # genera /dist (estático)
    ```
 
-### Despliegue (gratis)
+---
 
-Sube la carpeta `dist/` a **Netlify**, **Vercel** o **Cloudflare Pages**. Define la variable `PUBLIC_SITE_URL` con tu dominio final para que las imágenes Open Graph y el `sitemap` apunten correctamente.
+## 🚀 Despliegue
+
+### Opción A — Coolify / VPS (la que usa el sitio en vivo)
+
+El sitio se compila estático y se sirve con **Nginx** detrás del proxy **Traefik** de Coolify, que emite el certificado **Let's Encrypt** automáticamente. Todo está automatizado en [`deploy/deploy.sh`](deploy/deploy.sh):
+
+```sh
+BRAND=couva \
+DOMAIN=couva.148-72-153-91.sslip.io \
+VPS=root@148.72.153.91 \
+SSH_KEY=~/.ssh/vps_coolify_ed25519 \
+./deploy/deploy.sh
+```
+
+El script: compila con las variables de producción → empaqueta `dist/` → lo sube por SSH → levanta el contenedor `couva-landing` en la red `coolify` con las etiquetas Traefik (HTTPS + redirección + gzip/cache vía [`deploy/nginx.conf`](deploy/nginx.conf)).
+
+### Opción B — Hosting estático gratis
+
+Sube la carpeta `dist/` a **Netlify**, **Vercel** o **Cloudflare Pages**. Define `PUBLIC_SITE_URL` con tu dominio final (y `PUBLIC_BASE_PATH=/`) para que Open Graph, canonical y `sitemap` apunten bien.
+
+### 🧬 Clonar para una nueva marca
+
+La app está pensada como plantilla. Para lanzar otra marca:
+
+1. **Contenido** — edita `src/i18n/content.ts` y `src/i18n/productos.ts` (copy, precios, modelos) y reemplaza `public/media/*`, `public/og/og-*.jpg` y `assets/*`.
+2. **Webhooks** — en n8n duplica los workflows y renombra los paths a `<marca>-lead` y `<marca>-chat` (el frontend los deriva de `BRAND` en el deploy).
+3. **Credenciales n8n** — crea las credenciales de OpenRouter y Telegram de la nueva marca (ver abajo).
+4. **Deploy** — corre `BRAND=<marca> DOMAIN=<sub>.tu-dominio ./deploy/deploy.sh`. Listo: nuevo contenedor + HTTPS propio.
 
 ---
 
 ## 🔗 Flujo de captación
 
 1. **Base de datos** — Ejecuta las migraciones (o crea las tablas `leads` y `referidos`) en Supabase con RLS `insert-only`.
-2. **Workflow n8n** — Importa `n8n/couva-lead-workflow.json`, conecta tu credencial de notificación y **activa** el workflow.
-3. **Conecta la landing** — Pon la URL del webhook en `PUBLIC_N8N_WEBHOOK_URL`.
+2. **Workflows n8n** — Importa `n8n/couva-lead-workflow.json` y `n8n/couva-chat-workflow.json`.
+3. **Credenciales n8n** (los secretos viven aquí, nunca en el frontend):
+   - **OpenRouter API** → nómbrala exactamente **`OpenRouter COUVA`** (el nodo del modelo la resuelve por nombre).
+   - **Telegram API** → nómbrala exactamente **`COUVA Telegram Bot`** (token de @BotFather).
+   Luego **activa** ambos workflows.
+4. **Conecta la landing** — `PUBLIC_N8N_WEBHOOK_URL` (leads) y `PUBLIC_N8N_CHAT_URL` (chat IA). Los defaults ya apuntan al VPS.
 
-Los formularios envían: datos del prospecto, idioma, CTA de origen y parámetros **UTM** para medir tus campañas.
+Los formularios envían: datos del prospecto, idioma, CTA de origen y parámetros **UTM** para medir tus campañas. El chat mantiene memoria por `sessionId` (por navegador) y notifica el lead en cuanto detecta datos de contacto.
+
+> **Nota de robustez:** los workflows enlazan sus credenciales **por nombre**. Si renombras una credencial, reasígnala en el nodo correspondiente.
 
 ---
 
