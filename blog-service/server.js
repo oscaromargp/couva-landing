@@ -12,6 +12,7 @@ const multer = require('multer');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 const PORT = process.env.PORT || 8080;
 const SITE = (process.env.SITE_URL || 'https://couva.148-72-153-91.sslip.io').replace(/\/$/, '');
@@ -105,6 +106,8 @@ ${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ''}
 <meta property="og:description" content="${d}">
 ${canonical ? `<meta property="og:url" content="${esc(canonical)}">` : ''}
 <meta property="og:image" content="${esc(img)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${t}">
 <meta name="twitter:description" content="${d}">
@@ -175,6 +178,33 @@ app.get('/blog/api/latest', (req, res) => {
   res.set('Cache-Control', 'public, max-age=120');
   res.set('Access-Control-Allow-Origin', '*');
   res.json(posts);
+});
+
+/* ---------- imagen social 1200x630 (Open Graph) generada de la portada ---------- */
+async function coverBuffer(coverUrl) {
+  if (!coverUrl) throw new Error('no_cover');
+  if (coverUrl.startsWith('/blog/uploads/')) {
+    return fs.promises.readFile(path.join(UPLOADS_DIR, coverUrl.replace('/blog/uploads/', '')));
+  }
+  const url = /^https?:\/\//.test(coverUrl) ? coverUrl : SITE + coverUrl;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('fetch_' + r.status);
+  return Buffer.from(await r.arrayBuffer());
+}
+app.get(/^\/blog\/og\/([a-z0-9-]+)\.jpg$/, async (req, res) => {
+  const p = readPost(req.params[0]);
+  try {
+    const src = await coverBuffer(p && p.coverUrl);
+    const out = await sharp(src)
+      .resize(1200, 630, { fit: 'cover', position: 'attention' })
+      .jpeg({ quality: 82, mozjpeg: true })
+      .toBuffer();
+    res.set('Content-Type', 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(out);
+  } catch (e) {
+    res.redirect(302, SITE + '/og/og-es.jpg');
+  }
 });
 
 /* ---------- imágenes (estáticas) + subida ---------- */
@@ -252,11 +282,12 @@ app.get('/blog/:slug', (req, res) => {
   const p = readPost(slug);
   if (!p || !p.visible) return res.status(404).send(layout({ title: 'No encontrado', body: '<main class="wrap" style="padding:80px 20px;text-align:center"><h1>404</h1><p class="muted">Esta noticia no existe o aún no se publica.</p><a class="btn" href="' + SITE + '/blog">Ver noticias</a></main>' }));
   const canonical = `${SITE}/blog/${p.slug}`;
+  const ogCard = p.coverUrl ? `${SITE}/blog/og/${p.slug}.jpg` : `${SITE}/og/og-es.jpg`;
   const desc = p.metaDescription || p.excerptText || '';
   const jsonld = {
     '@context': 'https://schema.org', '@type': 'NewsArticle',
     headline: p.title, description: desc,
-    image: p.coverUrl ? [abs(p.coverUrl)] : [SITE + '/og/og-es.jpg'],
+    image: [ogCard],
     datePublished: p.publishedAt || p.createdAt, dateModified: p.updatedAt,
     author: { '@type': 'Organization', name: p.author || 'PardeSantos' },
     publisher: { '@type': 'Organization', name: 'PardeSantos', logo: { '@type': 'ImageObject', url: SITE + '/favicon.svg' } },
@@ -273,7 +304,7 @@ app.get('/blog/:slug', (req, res) => {
     <div style="margin:40px 0"><a class="btn" href="${SITE}/es/#contacto">Solicitar cotización →</a></div>
   </article>`;
   res.set('Cache-Control', 'public, max-age=120');
-  res.send(layout({ title: (p.seoTitle || p.title) + ' — ' + BRAND, desc, canonical, image: p.coverUrl, type: 'article', jsonld, body }));
+  res.send(layout({ title: (p.seoTitle || p.title) + ' — ' + BRAND, desc, canonical, image: ogCard, type: 'article', jsonld, body }));
 });
 
 app.get('/blog/healthz', (req, res) => res.send('ok'));
