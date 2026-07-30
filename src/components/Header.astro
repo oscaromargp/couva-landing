@@ -1,0 +1,56 @@
+---
+// Header unificado del sitio. Mismo menú en todas las páginas.
+import { content, contact, withBase, type Lang } from '../i18n/content';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = content[lang];
+const m = (p: string) => withBase(p);
+const homeHref = withBase(`/${lang}`);
+const otherHref = withBase(lang === 'es' ? '/en' : '/es');
+const waHref = `${contact.whatsapp}?text=${encodeURIComponent(lang === 'es' ? 'Hola, quiero información de PardeSantos.' : 'Hi, I want info about PardeSantos.')}`;
+
+// [href, etiqueta]. El blog vive fuera del base (servicio aparte), por eso va absoluto.
+const links: [string, string][] = lang === 'es'
+  ? [[m('/es/couva'), 'Residencial'], [m('/es/negocios'), 'Comercial'], [m('/es/socios'), 'Socios'], ['/blog', 'Noticias']]
+  : [[m('/en/couva'), 'Residential'], [m('/en/business'), 'Commercial'], [m('/en/partners'), 'Partners'], ['/blog', 'News']];
+---
+
+<header class="sticky top-0 z-50 border-b border-white/10 bg-ink/95 backdrop-blur">
+  <nav class="wrap flex items-center justify-between py-3.5">
+    <a href={homeHref} class="flex items-center gap-2 font-display text-xl font-bold text-white">
+      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"/><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"/></svg>
+      PardeSantos
+    </a>
+
+    <div class="hidden items-center gap-7 text-sm font-medium text-white/90 lg:flex">
+      {links.map(([href, label]) => (
+        <a href={href} class="hover:text-gold">{label}</a>
+      ))}
+    </div>
+
+    <div class="flex items-center gap-2">
+      <a href={otherHref} class="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10">{t.langName}</a>
+      <a href={waHref} target="_blank" rel="noopener" class="btn-gold hidden !px-4 !py-2 text-sm sm:inline-flex">{t.contact.whatsapp}</a>
+      <button id="mnav-btn" type="button" aria-label="Menú" class="grid h-9 w-9 place-items-center rounded-lg text-white hover:bg-white/10 lg:hidden">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div id="mnav" class="hidden border-t border-white/10 bg-ink lg:hidden">
+    <div class="wrap flex flex-col py-2">
+      {links.map(([href, label]) => (
+        <a href={href} class="border-b border-white/5 py-3 text-white/90 hover:text-gold">{label}</a>
+      ))}
+      <a href={waHref} target="_blank" rel="noopener" class="py-3 font-semibold text-gold">{t.contact.whatsapp} →</a>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var b = document.getElementById('mnav-btn'), p = document.getElementById('mnav');
+      if (b && p) b.addEventListener('click', function () { p.classList.toggle('hidden'); });
+    })();
+  </script>
+</header>

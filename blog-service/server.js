@@ -164,6 +164,19 @@ app.get('/blog/sitemap.xml', (req, res) => {
   <url><loc>${SITE}/blog</loc></url>${urls}</urlset>`);
 });
 
+/* ---------- API pública: últimas noticias (para el home estático) ---------- */
+app.get('/blog/api/latest', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 3, 12);
+  const posts = allPosts().filter((p) => p.visible).slice(0, limit).map((p) => ({
+    slug: p.slug, title: p.title, excerpt: p.excerptText || '', category: p.category || '',
+    cover: p.coverUrl ? abs(p.coverUrl) : '', date: p.publishedAt || p.createdAt,
+    url: `${SITE}/blog/${p.slug}`,
+  }));
+  res.set('Cache-Control', 'public, max-age=120');
+  res.set('Access-Control-Allow-Origin', '*');
+  res.json(posts);
+});
+
 /* ---------- imágenes (estáticas) + subida ---------- */
 app.use('/blog/uploads', express.static(UPLOADS_DIR, { maxAge: '30d', immutable: true }));
 const upload = multer({

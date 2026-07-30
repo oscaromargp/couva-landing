@@ -1,5 +1,6 @@
 ---
 import { content, contact, withBase, type Lang } from '../i18n/content';
+import Header from './Header.astro';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -39,27 +40,7 @@ const icons: Record<string, string> = {
 ---
 
 <!-- NAV -->
-<header id="nav" class="fixed inset-x-0 top-0 z-50 transition-all duration-300">
-  <nav class="wrap flex items-center justify-between py-4">
-    <a href={homeHref} class="flex items-center gap-2 font-display text-xl font-bold text-white">
-      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#C9A24B"/><path d="M32 14 L50 30 H44 V50 H36 V38 H28 V50 H20 V30 H14 Z" fill="#0B1F2A"/></svg>
-      PardeSantos
-    </a>
-    <div class="hidden items-center gap-7 text-sm font-medium text-white/90 lg:flex">
-      <a href="#pain" class="hover:text-gold">{t.nav.pain}</a>
-      <a href="#solution" class="hover:text-gold">{t.nav.solution}</a>
-      <a href="#roi" class="hover:text-gold">{t.nav.roi}</a>
-      <a href="#specs" class="hover:text-gold">{t.nav.specs}</a>
-      <a href="#referral" class="hover:text-gold">{t.nav.referral}</a>
-      <a href="/blog" class="hover:text-gold">{lang === 'es' ? 'Noticias' : 'News'}</a>
-      <a href={negociosHref} class="rounded-full bg-white/10 px-3 py-1 text-gold ring-1 ring-gold/30 hover:bg-white/20">{lang === 'es' ? '🏢 Negocios' : '🏢 Business'}</a>
-    </div>
-    <div class="flex items-center gap-3">
-      <a href={otherHref} class="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10">{t.langName}</a>
-      <a href="#contact" class="btn-gold !px-5 !py-2.5 text-sm">{t.nav.cta}</a>
-    </div>
-  </nav>
-</header>
+<Header lang={lang} />
 
 <!-- HERO -->
 <section class="relative flex min-h-[92vh] items-center overflow-hidden bg-ink">
@@ -759,11 +740,13 @@ const icons: Record<string, string> = {
 <script define:vars={{ WEBHOOK, lang, okMsg: t.leadForm.ok, errMsg: t.leadForm.err, sending: t.leadForm.sending }}>
   // --- Nav solidify on scroll ---
   const nav = document.getElementById('nav');
-  const onScroll = () => {
-    if (window.scrollY > 40) nav.classList.add('bg-ink/95','backdrop-blur','shadow-soft');
-    else nav.classList.remove('bg-ink/95','backdrop-blur','shadow-soft');
-  };
-  onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
+  if (nav) {
+    const onScroll = () => {
+      if (window.scrollY > 40) nav.classList.add('bg-ink/95','backdrop-blur','shadow-soft');
+      else nav.classList.remove('bg-ink/95','backdrop-blur','shadow-soft');
+    };
+    onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
+  }
 
   // --- Reveal on scroll ---
   const io = new IntersectionObserver((entries) => {
