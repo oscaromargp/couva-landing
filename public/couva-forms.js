@@ -44,27 +44,34 @@
     return { table: 'leads', rec: rec };
   }
 
-  // Espejo opcional a n8n (notificación instantánea de lead: Telegram/Gmail/Sheets).
-  // La URL la inyecta el layout en window.COUVA_N8N_LEAD_URL (desde PUBLIC_N8N_WEBHOOK_URL).
-  function mirrorToN8n(payload) {
+  // Envío a n8n (canal PRIMARIO: siempre disponible en el VPS → notifica Telegram
+  // y persiste el lead). La URL la inyecta el layout en window.COUVA_N8N_LEAD_URL.
+  function sendToN8n(payload) {
     var url = window.COUVA_N8N_LEAD_URL;
-    if (!url) return; // sin webhook configurado → no hace nada
-    try {
-      fetch(url, {
-        method: 'POST', keepalive: true,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(function () {}); // best-effort, no bloquea la UX del formulario
-    } catch (e) {}
+    if (!url) return Promise.resolve(false);
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(function (r) { return r.ok; }).catch(function () { return false; });
   }
 
-  window.couvaSubmit = function (payload) {
-    var x = build(payload);
-    mirrorToN8n(payload); // dispara la notificación en paralelo (no bloquea)
+  // Inserción en Supabase (persistencia secundaria; best-effort: si el proyecto está
+  // pausado/caído NO debe romper el formulario, por eso nunca lanza).
+  function sendToSupabase(x) {
     return fetch(SB_URL + '/rest/v1/' + x.table, {
       method: 'POST',
       headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify(x.rec),
-    }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return true; });
+    }).then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+
+  // Éxito si CUALQUIERA de los dos canales acepta el lead. Solo falla si ambos caen.
+  window.couvaSubmit = function (payload) {
+    var x = build(payload);
+    return Promise.all([sendToN8n(payload), sendToSupabase(x)]).then(function (res) {
+      if (res[0] || res[1]) return true;
+      throw new Error('No se pudo entregar el lead por ningún canal');
+    });
   };
 })();
