@@ -16,6 +16,9 @@
 # ============================================================
 set -euo pipefail
 
+# Evita el path-mangling de Git Bash (MSYS) en valores con '/'.
+export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
+
 BRAND="${BRAND:-couva}"
 DOMAIN="${DOMAIN:-couva.148-72-153-91.sslip.io}"
 VPS="${VPS:-root@148.72.153.91}"

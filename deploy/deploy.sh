@@ -16,6 +16,10 @@
 # ============================================================
 set -euo pipefail
 
+# Git Bash (MSYS) convierte valores tipo '/' en rutas de Windows (C:/Program Files/Git),
+# lo que corrompe el `base` de Astro y rompe TODOS los assets. Esto lo desactiva.
+export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
+
 BRAND="${BRAND:-couva}"
 DOMAIN="${DOMAIN:-couva.148-72-153-91.sslip.io}"
 VPS="${VPS:-root@148.72.153.91}"
