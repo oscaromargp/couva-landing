@@ -44,8 +44,23 @@
     return { table: 'leads', rec: rec };
   }
 
+  // Espejo opcional a n8n (notificación instantánea de lead: Telegram/Gmail/Sheets).
+  // La URL la inyecta el layout en window.COUVA_N8N_LEAD_URL (desde PUBLIC_N8N_WEBHOOK_URL).
+  function mirrorToN8n(payload) {
+    var url = window.COUVA_N8N_LEAD_URL;
+    if (!url) return; // sin webhook configurado → no hace nada
+    try {
+      fetch(url, {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(function () {}); // best-effort, no bloquea la UX del formulario
+    } catch (e) {}
+  }
+
   window.couvaSubmit = function (payload) {
     var x = build(payload);
+    mirrorToN8n(payload); // dispara la notificación en paralelo (no bloquea)
     return fetch(SB_URL + '/rest/v1/' + x.table, {
       method: 'POST',
       headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', Prefer: 'return=minimal' },

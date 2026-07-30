@@ -1,4 +1,5 @@
 {
+  "id": "couvalead0000001",
   "name": "COUVA 6x6 - Captacion de leads (landing)",
   "nodes": [
     {
@@ -218,7 +219,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "XTJIcUiWip8C3lTq",
+          "id": "couvaTG0000000001",
           "name": "COUVA Telegram Bot"
         }
       },

@@ -31,6 +31,9 @@ const urlEn = `${site}/en${path}`;
 const canonical = canonicalSlug ? `${site}${canonicalSlug}` : (lang === 'es' ? urlEs : urlEn);
 const ogImage = `${site}/og/og-${lang}.jpg`;
 
+// Webhook de n8n para el espejo de leads (notificación instantánea). Público por diseño.
+const N8N_LEAD_URL = import.meta.env.PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.148-72-153-91.sslip.io/webhook/couva-lead';
+
 // JSON-LD: producto inmobiliario
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -124,6 +127,7 @@ const jsonLd = {
   </head>
   <body class="bg-cream text-ink antialiased selection:bg-gold/30">
     <slot />
+    <script is:inline define:vars={{ N8N_LEAD_URL }}>window.COUVA_N8N_LEAD_URL = N8N_LEAD_URL;</script>
     <script is:inline src={withBase('/couva-forms.js')}></script>
     <Chatbot />
     {SB_URL && SB_ANON && (

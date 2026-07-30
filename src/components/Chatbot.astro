@@ -3,8 +3,10 @@ import { withBase, contact } from '../i18n/content';
 const negociosHref = withBase('/es/negocios');
 const waHref = `${contact.whatsapp}?text=${encodeURIComponent('Hola, quiero información de PardeSantos.')}`;
 const calHref = contact.calendar;
+// Endpoint del cerebro IA en n8n (OpenRouter). Público por diseño; la protección vive en el workflow.
+const chatUrl = import.meta.env.PUBLIC_N8N_CHAT_URL || 'https://n8n.148-72-153-91.sslip.io/webhook/couva-chat';
 ---
-<!-- CHATBOT LIGERO (sin backend / sin n8n) -->
+<!-- CHATBOT COUVA — menú rápido offline + cerebro IA (n8n/OpenRouter) con fallback -->
 <div id="cb" style="display:none" class="fixed bottom-4 right-4 z-[70] font-sans">
   <!-- Botón flotante -->
   <button id="cb-toggle" aria-label="Abrir chat" class="grid h-14 w-14 place-items-center rounded-full bg-gold text-ink shadow-gold transition hover:scale-105">
@@ -18,32 +20,60 @@ const calHref = contact.calendar;
       <div class="grid h-9 w-9 place-items-center rounded-full bg-gold text-ink font-bold">P</div>
       <div>
         <div class="font-display font-bold leading-none">PardeSantos</div>
-        <div class="text-xs text-sand/70">Asistente · responde al instante</div>
+        <div class="text-xs text-sand/70">Asesor · responde al instante</div>
       </div>
     </div>
     <div id="cb-msgs" class="flex max-h-[52vh] flex-col gap-2 overflow-y-auto bg-cream p-4"></div>
     <div id="cb-quick" class="flex flex-wrap gap-2 border-t border-ink/10 bg-white p-3"></div>
+    <!-- Entrada de texto libre → cerebro IA -->
+    <form id="cb-form" class="flex items-center gap-2 border-t border-ink/10 bg-white p-3">
+      <input id="cb-text" type="text" autocomplete="off" placeholder="Escribe tu pregunta…"
+        class="min-w-0 flex-1 rounded-full border border-ink/15 bg-cream px-4 py-2 text-sm text-ink outline-none focus:border-gold" />
+      <button id="cb-send" type="submit" aria-label="Enviar"
+        class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:scale-105 disabled:opacity-40">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      </button>
+    </form>
   </div>
 </div>
 
-<script is:inline define:vars={{ negociosHref, waHref, calHref, phone: contact.phone }}>
+<script is:inline define:vars={{ negociosHref, waHref, calHref, phone: contact.phone, chatUrl }}>
   (function () {
     if (location.pathname.includes('/admin')) return;
     var cb = document.getElementById('cb'); cb.style.display = 'block';
     var panel = document.getElementById('cb-panel'), msgs = document.getElementById('cb-msgs'), quick = document.getElementById('cb-quick');
     var iChat = document.getElementById('cb-icon-chat'), iClose = document.getElementById('cb-icon-close');
-    var open = false;
+    var form = document.getElementById('cb-form'), input = document.getElementById('cb-text'), sendBtn = document.getElementById('cb-send');
+    var open = false, busy = false;
+    var lang = (document.documentElement.lang || 'es').slice(0, 2);
+
+    // sessionId estable por navegador (memoria del agente en n8n)
+    var sid;
+    try {
+      sid = localStorage.getItem('couva_sid');
+      if (!sid) { sid = 'web-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); localStorage.setItem('couva_sid', sid); }
+    } catch (e) { sid = 'web-' + Date.now().toString(36); }
 
     function bot(html) {
       var d = document.createElement('div');
       d.className = 'max-w-[85%] self-start rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-sm text-ink shadow-soft ring-1 ring-ink/5';
       d.innerHTML = html; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+      return d;
     }
     function me(txt) {
       var d = document.createElement('div');
       d.className = 'max-w-[85%] self-end rounded-2xl rounded-tr-sm bg-gold px-3 py-2 text-sm font-medium text-ink';
       d.textContent = txt; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
     }
+    function typing() {
+      var d = document.createElement('div');
+      d.className = 'max-w-[60%] self-start rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-sm text-ink/50 shadow-soft ring-1 ring-ink/5';
+      d.textContent = '…'; d.dataset.typing = '1'; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+      return d;
+    }
+    // Escapa HTML y respeta saltos de línea del texto del agente
+    function esc(s) { var p = document.createElement('div'); p.textContent = String(s == null ? '' : s); return p.innerHTML.replace(/\n/g, '<br>'); }
+
     function chips(list) {
       quick.innerHTML = '';
       list.forEach(function (c) {
@@ -63,14 +93,52 @@ const calHref = contact.calendar;
     function back() { setTimeout(function () { chips([{ label: '↩️ Menú', fn: greet }, { label: '💬 Hablar por WhatsApp', fn: function () { window.open(waHref, '_blank'); } }]); }, 250); }
     function greet() { chips(MENU); }
 
+    // Envío al cerebro IA (n8n / OpenRouter)
+    function send(text) {
+      if (busy || !text) return;
+      busy = true; sendBtn.disabled = true;
+      me(text);
+      var t = typing();
+      var ctrl = new AbortController();
+      var to = setTimeout(function () { ctrl.abort(); }, 30000);
+      fetch(chatUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, sessionId: sid, idioma: lang, landing_path: location.pathname }),
+        signal: ctrl.signal,
+      })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function (data) {
+          clearTimeout(to);
+          var reply = (data && (data.reply || data.output || data.text)) || '';
+          if (t && t.parentNode) t.parentNode.removeChild(t);
+          if (reply) { bot(esc(reply)); }
+          else { bot('Gracias por tu mensaje. Te leo — cuéntame un poco más y te ayudo. 😊'); }
+        })
+        .catch(function () {
+          clearTimeout(to);
+          if (t && t.parentNode) t.parentNode.removeChild(t);
+          bot('Ahora mismo no puedo responder por aquí. Escríbenos directo por WhatsApp y te atendemos al instante:<br><a class="text-sea underline" href="' + waHref + '" target="_blank" rel="noopener">Abrir WhatsApp →</a>');
+        })
+        .finally(function () { busy = false; sendBtn.disabled = false; input.focus(); });
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = (input.value || '').trim();
+      if (!v) return;
+      input.value = '';
+      send(v);
+    });
+
     function first() {
-      if (msgs.childElementCount === 0) { bot('¡Hola! 👋 Soy el asistente de <b>PardeSantos</b>. ¿En qué te ayudo?'); greet(); }
+      if (msgs.childElementCount === 0) { bot('¡Hola! 👋 Soy el asesor de <b>PardeSantos</b>. Pregúntame por precios, modelos, tiempos o envío — o escríbeme lo que necesites.'); greet(); }
     }
     document.getElementById('cb-toggle').onclick = function () {
       open = !open;
       panel.classList.toggle('hidden', !open);
       iChat.classList.toggle('hidden', open); iClose.classList.toggle('hidden', !open);
-      if (open) first();
+      if (open) { first(); setTimeout(function () { input.focus(); }, 100); }
     };
   })();
 </script>
