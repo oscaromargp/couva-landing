@@ -27,6 +27,7 @@ const icons: Record<string, string> = {
       PardeSantos
     </a>
     <div class="flex items-center gap-3">
+      <a href="/blog" class="hidden text-sm font-medium text-white/90 hover:text-gold sm:inline">{lang === 'es' ? 'Noticias' : 'News'}</a>
       <a href={otherHref} class="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10">{t.langName}</a>
       <a href={waHref} target="_blank" rel="noopener" class="btn-gold !px-5 !py-2.5 text-sm">{t.contact.whatsapp}</a>
     </div>
@@ -118,6 +119,7 @@ const icons: Record<string, string> = {
         <a href={m(`/${lang}/couva`)} class="hover:text-gold">{lang === 'es' ? 'Residencial' : 'Residential'}</a>
         <a href={m(lang === 'es' ? '/es/negocios' : '/en/business')} class="hover:text-gold">{lang === 'es' ? 'Comercial' : 'Commercial'}</a>
         <a href={m(lang === 'es' ? '/es/socios' : '/en/partners')} class="hover:text-gold">{lang === 'es' ? 'Socios' : 'Partners'}</a>
+        <a href="/blog" class="hover:text-gold">{lang === 'es' ? 'Noticias' : 'News'}</a>
         <a href={m(`/${lang}/${lang === 'es' ? 'aviso-de-privacidad' : 'privacy'}`)} class="hover:text-gold">{t.footer.privacy}</a>
       </div>
     </div>

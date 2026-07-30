@@ -204,6 +204,36 @@ La app está pensada como plantilla. Para lanzar otra marca:
 
 ---
 
+## 📰 Blog de noticias (editor tipo Shopify)
+
+El blog corre como un **microservicio Node aislado** (`blog-service/`) detrás del mismo proxy Traefik, sin tocar la landing estática. Traefik enruta `PathPrefix(/blog)` al servicio y el resto al sitio estático.
+
+| Ruta | Qué es |
+|---|---|
+| `/blog` | Índice público de noticias (SSR, con RSS y sitemap propios) |
+| `/blog/<slug>` | Post individual, renderizado en el servidor con **SEO + OG + JSON-LD `NewsArticle`** |
+| `/blog/admin` | **Editor** de una sola pantalla estilo Shopify (título, contenido enriquecido, extracto, SEO listing, visibilidad, portada, autor/categoría/tags) |
+| `/blog/uploads/*` | Imágenes subidas, guardadas en el VPS |
+
+- **Login:** mismo usuario/contraseña del panel `/admin` (auth por `ADMIN_HASH` = SHA-256).
+- **Almacenamiento:** un JSON por post en `/opt/<marca>/blog/posts/` y las imágenes en `/opt/<marca>/uploads/` (carpeta del proyecto). Sin base de datos.
+- **Publicar = instantáneo** (SSR): al guardar como *Visible* aparece en `/blog` y en Google.
+
+### Desplegar / actualizar el blog
+
+```sh
+BRAND=couva \
+DOMAIN=couva.148-72-153-91.sslip.io \
+ADMIN_USER=oscaromargp \
+ADMIN_HASH=<sha256-hex-de-tu-contraseña> \
+./blog-service/deploy-blog.sh
+```
+
+> El `ADMIN_HASH` se calcula sin exponer la contraseña:
+> `$p='TuClave'; -join ([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($p))|%{$_.ToString('x2')})` (PowerShell).
+
+---
+
 ## 🔗 Flujo de captación
 
 1. **Base de datos** — Ejecuta las migraciones (o crea las tablas `leads` y `referidos`) en Supabase con RLS `insert-only`.
