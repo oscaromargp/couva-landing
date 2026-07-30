@@ -125,6 +125,7 @@ const specGroups: [string, [string, string][]][] = [
     </div>
     <div class="reveal">
       <img src={m(p.ficha)} alt={`Ficha ${p.name}`} loading="lazy" class="w-full rounded-2xl bg-white object-contain p-2 shadow-soft" />
+      <a href={m(p.ficha)} download={`ficha-${p.slug}.jpg`} class="btn-gold mt-4 inline-flex !px-5 !py-2.5 text-sm">⬇ Descargar ficha técnica</a>
     </div>
   </div>
 </section>
