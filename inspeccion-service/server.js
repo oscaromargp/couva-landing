@@ -125,6 +125,21 @@ app.post('/api/inspections/:id/media', auth, (req, res, next) => { if (!safeId(r
 app.use('/media', express.static(INSP_DIR, { maxAge: '30d', immutable: true, index: false }));
 
 /* ---------- reporte público ---------- */
+app.post('/r/:id/firma', (req, res) => {
+  if (!safeId(req.params.id)) return res.status(400).json({ error: 'id' });
+  const insp = readInsp(req.params.id);
+  if (!insp || insp.status !== 'publicado') return res.status(404).json({ error: 'no_disponible' });
+  if (insp.acuse) return res.status(409).json({ error: 'ya_firmado' });
+  const { nombre, firma } = req.body || {};
+  if (!nombre || typeof firma !== 'string' || !/^data:image\/png;base64,/.test(firma)) return res.status(400).json({ error: 'datos' });
+  const buf = Buffer.from(firma.replace(/^data:image\/png;base64,/, ''), 'base64');
+  if (buf.length > 600 * 1024) return res.status(413).json({ error: 'firma_grande' });
+  const dir = path.join(INSP_DIR, insp.id, 'media'); fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'firma.png'), buf);
+  insp.acuse = { nombre: String(nombre).slice(0, 120), fecha: new Date().toISOString(), url: `/media/${insp.id}/firma.png` };
+  writeInsp(insp);
+  res.json({ ok: true });
+});
 app.get('/r/:id', (req, res) => {
   res.set('X-Robots-Tag', 'noindex, nofollow');
   if (!safeId(req.params.id)) return res.status(404).send(reportShell('No encontrado', '<p>Reporte no válido.</p>'));
@@ -156,23 +171,36 @@ function renderReport(insp) {
   const inc = insp.incidents || [];
   const incCards = inc.map((i, n) => {
     const fotos = (i.media || []).filter((x) => (x.tipo || 'foto') === 'foto');
+    const videos = (i.media || []).filter((x) => x.tipo === 'video');
     const audios = (i.media || []).filter((x) => x.tipo === 'audio');
     const gal = fotos.map((f) => `<img src="${esc(f.url)}" alt="Evidencia" loading="lazy" onclick="zoom(this.src)">`).join('');
+    const vid = videos.map((v) => `<video controls preload="metadata" src="${esc(v.url)}"></video>`).join('');
     const aud = audios.map((a) => `<audio controls src="${esc(a.url)}"></audio>`).join('');
+    const est = i.estado && i.estado !== 'abierta' ? `<span class="est ${esc(i.estado)}">${esc(i.estado)}</span>` : '';
     return `<article class="card">
       <div class="chead">
         <span class="num">#${n + 1}</span>
         <span class="badge" style="background:${CRIT_COLOR[i.criticidad] || '#666'}">${esc(CRIT[i.criticidad] || i.criticidad || '')}</span>
         <span class="causa">${esc(CAUSAS[i.causa] || i.causa || '')}</span>
+        ${est}
         ${i.costo ? `<span class="costo">${money(i.costo)}</span>` : ''}
       </div>
       <div class="ubic">📍 ${esc(i.ubicacion || 'Sin ubicación')}</div>
       ${i.descripcion ? `<p class="desc"><b>Falla:</b> ${esc(i.descripcion)}</p>` : ''}
       ${i.solucion ? `<p class="sol"><b>Solución propuesta:</b> ${esc(i.solucion)}</p>` : ''}
       ${gal ? `<div class="gal">${gal}</div>` : ''}
+      ${vid ? `<div class="vid">${vid}</div>` : ''}
       ${aud ? `<div class="aud">${aud}</div>` : ''}
     </article>`;
   }).join('');
+
+  const fdate = ((insp.acuse && insp.acuse.fecha) || '').slice(0, 10);
+  const acuseHtml = insp.acuse
+    ? `<div class="acuse signed"><b>✔ Acuse de recibo</b><p>Recibido de conformidad por <b>${esc(insp.acuse.nombre)}</b> el ${esc(fdate)}.</p><img class="firma" src="${esc(insp.acuse.url)}" alt="Firma"></div>`
+    : `<div class="acuse" id="acuseBox"><b>Acuse de recibo del cliente</b><p class="muted2">Firme en el recuadro para dejar constancia de que recibió esta inspección.</p>
+       <canvas id="pad" class="pad"></canvas>
+       <div><button class="btn2 ghost" onclick="clearPad()">Borrar firma</button></div>
+       <input id="firmaNombre" placeholder="Nombre de quien recibe"><button class="btn2 gold" onclick="firmar()">Firmar y aceptar ✍️</button></div>`;
 
   const stagesDone = (insp.stages || []).map((s) => {
     const total = (s.items || []).length;
@@ -210,6 +238,16 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
 .desc,.sol{margin:4px 0;font-size:14px}.sol{color:#1a5e3a}
 .gal{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.gal img{width:120px;height:90px;object-fit:cover;border-radius:8px;cursor:zoom-in}
 .aud{margin-top:10px}.aud audio{width:100%}
+.vid{margin-top:10px}.vid video{width:100%;max-width:360px;border-radius:8px}
+.est{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;color:#fff;background:#2f855a}.est.reparada{background:#b7791f}.est.verificada{background:#2f855a}
+.acuse{margin:8px 28px 24px;padding:16px;border:1px solid var(--line);border-radius:12px;background:#fbfbfc}
+.acuse.signed{background:#f2fbf5;border-color:#bfe6cd}
+.acuse input{width:100%;margin:10px 0;padding:11px;border:1px solid #c9cccf;border-radius:8px;font-size:15px}
+.acuse .firma{max-width:280px;margin-top:8px;border-bottom:2px solid var(--ink)}
+.muted2{color:#6b7681;font-size:13px;margin:.3em 0 .6em}
+.pad{width:100%;height:150px;border:1px dashed #b6bcc3;border-radius:10px;background:#fff;touch-action:none;display:block}
+.btn2{background:var(--ink);color:#fff;border:0;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer;margin-top:8px;font-size:15px}
+.btn2.gold{background:var(--gold);color:var(--ink)}.btn2.ghost{background:#fff;color:var(--ink);border:1px solid #c9cccf}
 .foot{padding:20px 28px;color:#8b95a0;font-size:12px;text-align:center;border-top:1px solid var(--line)}
 .bar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:10px;padding:10px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px)}
 .btn{background:var(--ink);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px}
@@ -242,6 +280,7 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
   ${stagesDone ? `<h2 class="sec">Etapas de control</h2><div class="stages">${stagesDone}</div>` : ''}
   <h2 class="sec">Incidencias detectadas (${inc.length})</h2>
   <div class="cards">${incCards || '<p style="color:#6b7681">Sin incidencias registradas. ✅</p>'}</div>
+  ${acuseHtml}
   <div class="foot">Generado por el sistema de inspección COUVA · PardeSantos · ${esc((insp.publishedAt || '').slice(0, 10))}</div>
 </div>
 <div id="lb" onclick="this.style.display='none'"><img id="lbi" src=""></div>
@@ -249,6 +288,19 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
 <script>
 function zoom(s){document.getElementById('lbi').src=s;document.getElementById('lb').style.display='grid';}
 function dl(){var el=document.getElementById('sheet');html2pdf().set({margin:0,filename:'Reporte-${esc(insp.folio)}.pdf',image:{type:'jpeg',quality:.95},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'pt',format:'a4'}}).from(el).save();}
+/* firma del cliente */
+var pad=document.getElementById('pad'),pctx,drawing=false,hasSign=false;
+if(pad){pad.width=pad.offsetWidth*2;pad.height=300;pctx=pad.getContext('2d');pctx.scale(2,2);pctx.lineWidth=2.5;pctx.lineCap='round';pctx.lineJoin='round';pctx.strokeStyle='#0B1F2A';
+  function pp(e){var r=pad.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+  pad.addEventListener('pointerdown',function(e){e.preventDefault();drawing=true;hasSign=true;var p=pp(e);pctx.beginPath();pctx.moveTo(p.x,p.y);});
+  pad.addEventListener('pointermove',function(e){if(!drawing)return;e.preventDefault();var p=pp(e);pctx.lineTo(p.x,p.y);pctx.stroke();});
+  window.addEventListener('pointerup',function(){drawing=false;});
+}
+function clearPad(){if(pctx){pctx.clearRect(0,0,pad.width,pad.height);hasSign=false;}}
+function firmar(){var n=(document.getElementById('firmaNombre').value||'').trim();if(!n){alert('Escribe el nombre de quien recibe.');return;}if(!hasSign){alert('Firma dentro del recuadro.');return;}
+  var data=pad.toDataURL('image/png');
+  fetch(location.pathname.replace(/\\/$/,'')+'/firma',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,firma:data})})
+  .then(function(r){return r.json();}).then(function(j){if(j.ok){location.reload();}else{alert('No se pudo firmar: '+(j.error||''));}}).catch(function(){alert('Error de conexión.');});}
 </script>
 </body></html>`;
 }

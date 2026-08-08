@@ -174,6 +174,7 @@ function incCard(i) {
   const nfotos = (i.media || []).filter((m) => m.tipo === 'foto').length;
   return `<div class="card tap" onclick="editIncident('${i.id}')">
     <div class="row"><span class="badge ${i.criticidad}">${esc(CRIT[i.criticidad] || '')}</span>
+      ${i.estado && i.estado !== 'abierta' ? `<span class="pill ${i.estado === 'verificada' ? 'publicado' : 'borrador'}">${esc(i.estado)}</span>` : ''}
       <span class="sp"></span>${i.costo ? `<b>${money(i.costo)}</b>` : ''}</div>
     <div style="margin-top:6px;font-weight:600">📍 ${esc(i.ubicacion || 'Sin ubicación')}</div>
     <div class="muted" style="font-size:14px">${esc((i.descripcion || '').slice(0, 90))}</div>
@@ -181,7 +182,7 @@ function incCard(i) {
   </div>`;
 }
 function addIncident(stage, ubicPrefill) {
-  incEdit = { id: uid(), stage: stage || cur.stages[step].id, ubicacion: ubicPrefill || '', causa: 'fabrica', criticidad: 'media', descripcion: '', solucion: '', costo: '', media: [] };
+  incEdit = { id: uid(), stage: stage || cur.stages[step].id, ubicacion: ubicPrefill || '', causa: 'fabrica', criticidad: 'media', estado: 'abierta', descripcion: '', solucion: '', costo: '', media: [] };
   viewIncidentForm(true);
 }
 function editIncident(id) { incEdit = cur.incidents.find((x) => x.id === id); viewIncidentForm(false); }
@@ -200,9 +201,11 @@ function viewIncidentForm(isNew) {
       <button class="btn g sm" style="margin-top:6px" onclick="dictate('i_desc')">🎙️ Dictar</button>
       <label>Propuesta de solución</label><textarea id="i_sol" placeholder="Cómo se repara…">${esc(i.solucion)}</textarea>
       <label>Cotización estimada ($)</label><input id="i_costo" type="number" inputmode="numeric" value="${esc(i.costo)}" placeholder="0">
+      <label>Estado</label><select id="i_estado">${opt({ abierta: 'Abierta (detectada)', reparada: 'Reparada', verificada: 'Verificada' }, i.estado || 'abierta')}</select>
       <label>Evidencia</label>
       <div class="btnrow">
-        <label class="btn g sm" style="flex:1">📷 Foto<input id="i_foto" type="file" accept="image/*" capture="environment" class="hidden" onchange="onPhoto(event)"></label>
+        <label class="btn g sm" style="flex:1">📷 Foto<input type="file" accept="image/*" capture="environment" class="hidden" onchange="onPhoto(event)"></label>
+        <label class="btn g sm" style="flex:1">🎬 Video<input type="file" accept="video/*" capture="environment" class="hidden" onchange="onVideo(event)"></label>
         <button class="btn g sm" style="flex:1" id="i_audiobtn" onclick="toggleAudio()">🎤 Audio</button>
       </div>
       <div class="thumbs" id="i_thumbs"></div>
@@ -220,30 +223,73 @@ async function renderThumbs() {
   const box = $('#i_thumbs'); if (!box) return;
   const parts = [];
   for (const m of incEdit.media) {
-    if (m.tipo === 'foto') {
-      let src = m.url || '';
-      if (!src && m.localId) { const rec = await DB.getMedia(m.localId); if (rec) src = URL.createObjectURL(rec.blob); }
-      parts.push(`<div class="t"><img src="${src}"><button class="x" onclick="rmMedia('${m.localId || m.url}')">×</button></div>`);
-    } else {
-      let src = m.url || ''; if (!src && m.localId) { const rec = await DB.getMedia(m.localId); if (rec) src = URL.createObjectURL(rec.blob); }
-      parts.push(`<div class="t" style="width:100%"><audio controls src="${src}" style="width:100%"></audio><button class="btn bad sm" onclick="rmMedia('${m.localId || m.url}')">Quitar audio</button></div>`);
-    }
+    let src = m.url || '';
+    if (!src && m.localId) { const rec = await DB.getMedia(m.localId); if (rec) src = URL.createObjectURL(rec.blob); }
+    const key = m.localId || m.url;
+    if (m.tipo === 'foto') parts.push(`<div class="t"><img src="${src}"><button class="x" onclick="rmMedia('${key}')">×</button></div>`);
+    else if (m.tipo === 'video') parts.push(`<div class="t"><video src="${src}" muted playsinline style="width:76px;height:76px;object-fit:cover;border-radius:8px" onclick="this.paused?this.play():this.pause()"></video><button class="x" onclick="rmMedia('${key}')">×</button></div>`);
+    else parts.push(`<div class="t" style="width:100%"><audio controls src="${src}" style="width:100%"></audio><button class="btn bad sm" onclick="rmMedia('${key}')">Quitar audio</button></div>`);
   }
   box.innerHTML = parts.join('');
 }
 function rmMedia(key) { incEdit.media = incEdit.media.filter((m) => (m.localId || m.url) !== key); if (key.length > 20 || key.startsWith('blob')) {} DB.delMedia(key).catch(() => {}); renderThumbs(); }
 
-/* Foto: reduce a máx 1600px y guarda como JPEG en IndexedDB */
+/* Foto: reduce a máx 1600px, abre el editor de marcas y guarda en IndexedDB */
 function onPhoto(ev) {
-  const file = ev.target.files[0]; if (!file) return;
+  const file = ev.target.files[0]; if (!file) return; ev.target.value = '';
+  downscale(file, 1600, (blob) => annotate(blob, async (out) => {
+    const lid = uid(); await DB.putMedia(lid, cur.localId, 'foto', out); incEdit.media.push({ localId: lid, tipo: 'foto' }); renderThumbs(); toast('Foto agregada');
+  }));
+}
+function onVideo(ev) {
+  const file = ev.target.files[0]; if (!file) return; ev.target.value = '';
+  if (file.size > 40 * 1024 * 1024) { toast('Video muy grande (máx 40 MB). Graba uno más corto.'); return; }
+  (async () => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'video', file); incEdit.media.push({ localId: lid, tipo: 'video' }); renderThumbs(); toast('Video agregado'); })();
+}
+function downscale(file, max, cb) {
+  const img = new Image();
+  img.onload = () => { const sc = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); c.toBlob(cb, 'image/jpeg', 0.85); };
+  img.src = URL.createObjectURL(file);
+}
+/* Editor de anotación: pluma + flecha + colores sobre la foto */
+function annotate(blob, done) {
   const img = new Image();
   img.onload = () => {
-    const max = 1600, sc = Math.min(1, max / Math.max(img.width, img.height));
-    const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
-    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-    c.toBlob(async (blob) => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'foto', blob); incEdit.media.push({ localId: lid, tipo: 'foto' }); renderThumbs(); toast('Foto agregada'); }, 'image/jpeg', 0.82);
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:#111;z-index:70;display:flex;flex-direction:column';
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:6px;padding:10px;background:#0B1F2A;align-items:center;flex-wrap:wrap';
+    const cvs = document.createElement('canvas');
+    const wrap = document.createElement('div'); wrap.style.cssText = 'flex:1;overflow:auto;display:grid;place-items:center;padding:8px'; wrap.appendChild(cvs);
+    modal.append(bar, wrap); document.body.appendChild(modal);
+    const scale = Math.min(1, 1400 / Math.max(img.width, img.height));
+    cvs.width = Math.round(img.width * scale); cvs.height = Math.round(img.height * scale);
+    cvs.style.maxWidth = '100%'; cvs.style.touchAction = 'none';
+    const ctx = cvs.getContext('2d');
+    let color = '#ee1111', tool = 'pen', strokes = [], drawing = null;
+    const lw = Math.max(3, cvs.width / 160), hh = Math.max(14, cvs.width / 34);
+    function drawStroke(s) {
+      ctx.strokeStyle = s.color; ctx.fillStyle = s.color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      if (s.tool === 'pen') { ctx.beginPath(); s.pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke(); }
+      else { const a = s.pts[0], b = s.pts[s.pts.length - 1], ang = Math.atan2(b.y - a.y, b.x - a.x); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - hh * Math.cos(ang - 0.4), b.y - hh * Math.sin(ang - 0.4)); ctx.lineTo(b.x - hh * Math.cos(ang + 0.4), b.y - hh * Math.sin(ang + 0.4)); ctx.closePath(); ctx.fill(); }
+    }
+    function redraw() { ctx.drawImage(img, 0, 0, cvs.width, cvs.height); strokes.forEach(drawStroke); }
+    function pos(e) { const r = cvs.getBoundingClientRect(); return { x: (e.clientX - r.left) * (cvs.width / r.width), y: (e.clientY - r.top) * (cvs.height / r.height) }; }
+    cvs.addEventListener('pointerdown', (e) => { e.preventDefault(); drawing = { tool, color, pts: [pos(e)] }; });
+    cvs.addEventListener('pointermove', (e) => { if (!drawing) return; e.preventDefault(); drawing.pts.push(pos(e)); redraw(); drawStroke(drawing); });
+    window.addEventListener('pointerup', () => { if (drawing) { strokes.push(drawing); drawing = null; redraw(); } });
+    const mk = (label, fn, bg) => { const b = document.createElement('button'); b.innerHTML = label; b.style.cssText = 'background:' + (bg || '#fff') + ';border:0;border-radius:8px;padding:9px 11px;font-weight:700;cursor:pointer;font-size:15px'; b.onclick = fn; return b; };
+    const penB = mk('✏️', () => { tool = 'pen'; penB.style.outline = '3px solid #C9A24B'; arrB.style.outline = 'none'; });
+    const arrB = mk('➤', () => { tool = 'arrow'; arrB.style.outline = '3px solid #C9A24B'; penB.style.outline = 'none'; });
+    penB.style.outline = '3px solid #C9A24B';
+    const colBox = document.createElement('div'); colBox.style.cssText = 'display:flex;gap:5px;align-items:center';
+    ['#ee1111', '#111111', '#00aa00', '#0088ff', '#ffffff'].forEach((c) => { const d = document.createElement('button'); d.style.cssText = 'width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:' + c + ';cursor:pointer'; d.onclick = () => { color = c; }; colBox.appendChild(d); });
+    bar.append(penB, arrB, colBox, mk('↶', () => { strokes.pop(); redraw(); }), mk('🗑', () => { strokes = []; redraw(); }));
+    const sp = document.createElement('span'); sp.style.marginLeft = 'auto'; bar.append(sp);
+    bar.append(mk('Omitir', () => { document.body.removeChild(modal); done(blob); }), mk('Guardar ✓', () => { cvs.toBlob((b) => { document.body.removeChild(modal); done(b); }, 'image/jpeg', 0.85); }, '#C9A24B'));
+    redraw();
   };
-  img.src = URL.createObjectURL(file);
+  img.src = URL.createObjectURL(blob);
 }
 /* Audio: MediaRecorder */
 async function toggleAudio() {
@@ -269,7 +315,7 @@ function dictate(targetId) {
 
 async function saveIncident() {
   incEdit.ubicacion = $('#i_ubic').value; incEdit.causa = $('#i_causa').value; incEdit.criticidad = $('#i_crit').value;
-  incEdit.descripcion = $('#i_desc').value; incEdit.solucion = $('#i_sol').value; incEdit.costo = $('#i_costo').value;
+  incEdit.descripcion = $('#i_desc').value; incEdit.solucion = $('#i_sol').value; incEdit.costo = $('#i_costo').value; incEdit.estado = $('#i_estado').value;
   const idx = cur.incidents.findIndex((x) => x.id === incEdit.id);
   if (idx >= 0) cur.incidents[idx] = incEdit; else cur.incidents.push(incEdit);
   await saveLocal(); incEdit = null; toast('Incidencia guardada'); viewWizard();
@@ -343,5 +389,5 @@ async function publish() {
 window.addEventListener('online', () => { const t = $('.top .off'); if (t) viewDashboard(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 // exponer handlers usados en onclick
-Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink });
+Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink });
 TOKEN ? viewDashboard() : viewLogin();

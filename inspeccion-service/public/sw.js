@@ -1,5 +1,5 @@
 /* Service worker — cachea el "shell" de la app para uso offline en campo. */
-const CACHE = 'pdi-couva-v1';
+const CACHE = 'pdi-couva-v2';
 const SHELL = ['/', '/index.html', '/styles.css', '/db.js', '/app.js', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (e) => {
