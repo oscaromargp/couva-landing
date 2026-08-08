@@ -18,13 +18,17 @@ const online = () => navigator.onLine;
 const CAUSAS = { fabrica: 'Origen en Fábrica', transporte: 'Vibración / Transporte', montaje: 'Maniobra de Montaje / Izaje', faltante: 'Incompletitud / Omisión de Obra' };
 const CRIT = { baja: 'Baja · Estético', media: 'Media · Ajuste', critica: 'Crítica · Bloqueante' };
 const STAGES = [
-  { id: 'e1', nombre: '1. Cimentación, apoyos y nivelación', items: ['Nivelación láser (plomo y asentamiento)', 'Apoyos / pilotes firmes y completos', 'Sin asentamientos diferenciales'] },
-  { id: 'e2', nombre: '2. Estructura, pernos y soldaduras', items: ['Pernos de unión torqueados', 'Soldaduras sin fisuras ni daños por izaje', 'Estructura sin torsión ni deformación'] },
-  { id: 'e3', nombre: '3. Envolvente, cubierta y sellado', items: ['Cubierta pluvial sin filtraciones', 'Sellado de juntas hermético', 'Fachada y paneles sin daños'] },
-  { id: 'e4', nombre: '4. Servicios MEPH (agua, drenaje, eléctrico, gas)', items: ['Agua: presión correcta y sin fugas', 'Drenaje: cespol / tubería conectada al registro', 'Electricidad: circuitos y protecciones', 'Gas: conexión y prueba de hermeticidad'] },
-  { id: 'e5', nombre: '5. Interiores, cancelería, muebles y cristales', items: ['Muros y plafones sin daños', 'Cancelería y cristales completos', 'Muebles (cocina / baño) instalados y funcionales', 'Pintura y acabados'] },
-  { id: 'e6', nombre: '6. Prueba dinámica de estrés', items: ['Presión de agua + carga eléctrica simultánea', 'Sin fallas bajo carga combinada'] },
+  { id: 'e1', nombre: '1. Cimentación, apoyos y nivelación', items: ['Nivelación láser correcta (plomo, sin asentamiento)', 'Apoyos / pilotes / dados firmes y completos', 'Base aislada de la humedad del terreno', 'Sin asentamientos diferenciales entre módulos'] },
+  { id: 'e2', nombre: '2. Estructura y chasis', items: ['Bastidor de acero sin abolladuras graves ni óxido profundo', 'Puntos de izaje y esquinas alineados y firmes', 'Pernos de unión entre módulos torqueados', 'Soldaduras sin fisuras ni daños por izaje/vibración', 'Estructura sin torsión ni deformación'] },
+  { id: 'e3', nombre: '3. Envolvente: paredes, techo, aislamiento y sellado', items: ['Paneles sándwich (EPS/lana de roca) sin golpes ni perforaciones', 'Cubierta/techo sellado en canales y juntas de desagüe pluvial', 'Sin filtraciones de luz ni agua en uniones de módulos', 'Sellado de silicona perimetral completo', 'Revestimiento interior sin humedad, grietas ni abolladuras'] },
+  { id: 'e4', nombre: '4. Pisos y zócalos', items: ['Piso (SPC/fibrocemento) firme, sin hundimientos', 'Sin rayones profundos, burbujas ni piezas sueltas', 'Zócalos instalados uniformes y sellados en los bordes'] },
+  { id: 'e5', nombre: '5. Puertas, ventanas y cancelería', items: ['Puerta principal e interiores abren/cierran sin fricción', 'Chapas, manijas y cerrojos operan con su llave', 'Ventanas (aluminio/DVH) selladas y sin roturas en cristales', 'Mosquiteros / persianas (si aplica) funcionales'] },
+  { id: 'e6', nombre: '6. Instalación eléctrica', items: ['Tablero con interruptores termomagnéticos rotulados', 'Contactos, apagadores y salidas de luz operativas', 'Luminarias LED interiores y exteriores funcionando', 'Conexión a tierra visible y segura'] },
+  { id: 'e7', nombre: '7. Instalaciones sanitarias y grifería', items: ['Agua fría y caliente sin fugas ni goteos', 'Inodoro, lavabo y ducha instalados y bien anclados', 'Drenaje: cespol y bajantes conectados al registro, sin obstrucción'] },
+  { id: 'e8', nombre: '8. Prueba dinámica de estrés', items: ['Presión de agua + carga eléctrica simultánea', 'Sin fallas bajo carga combinada', 'Puertas y ventanas operan con la casa en uso'] },
+  { id: 'e9', nombre: '9. Inventario y documentación entregada', items: ['Planos eléctricos y sanitarios del módulo', 'Llaves de repuesto entregadas', 'Manuales de mantenimiento de equipos', 'Garantías de componentes (aire, luminarias, grifería)'] },
 ];
+const CONCEPTOS = { aprobado: 'Aprobado sin observaciones', observaciones: 'Aprobado con observaciones menores', rechazado: 'Rechazado' };
 
 /* ---------- utilidades UI ---------- */
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600); }
@@ -118,9 +122,10 @@ function viewNew() {
     <div class="card">
       <label>Modelo</label><input id="h_modelo" value="COUVA 6×6">
       <label>N° de Lote / Serie</label><input id="h_serie" placeholder="Ej. C6-2026-014">
-      <label>Ubicación</label><input id="h_ubicacion" placeholder="Ej. Puerto Escondido, Oax.">
-      <label>Cliente / Supervisor</label><input id="h_cliente" placeholder="Nombre de quien recibe">
-      <label>Inspector</label><input id="h_inspector" value="Oscar Omar Gómez">
+      <label>Ubicación de la instalación</label><input id="h_ubicacion" placeholder="Ej. Puerto Escondido, Oax.">
+      <label>Proveedor / Fabricante</label><input id="h_proveedor" value="PardeSantos">
+      <label>Cliente / Supervisor (representante de entrega)</label><input id="h_cliente" placeholder="Nombre de quien recibe">
+      <label>Responsable de la inspección</label><input id="h_inspector" value="Oscar Omar Gómez">
       <label>Fecha</label><input id="h_fecha" type="date" value="${today}">
     </div>
     <button class="btn p" onclick="createInspection()">Comenzar recorrido guiado →</button>
@@ -128,7 +133,7 @@ function viewNew() {
   render();
 }
 async function createInspection() {
-  const header = { modelo: $('#h_modelo').value, serie: $('#h_serie').value, ubicacion: $('#h_ubicacion').value, cliente: $('#h_cliente').value, inspector: $('#h_inspector').value, fecha: $('#h_fecha').value };
+  const header = { modelo: $('#h_modelo').value, serie: $('#h_serie').value, ubicacion: $('#h_ubicacion').value, proveedor: $('#h_proveedor').value, cliente: $('#h_cliente').value, inspector: $('#h_inspector').value, fecha: $('#h_fecha').value };
   if (!header.modelo) { toast('Indica el modelo'); return; }
   cur = newInspection(header); step = 0; await saveLocal(); viewWizard();
 }
@@ -324,11 +329,17 @@ async function deleteIncident() { if (!confirm('¿Eliminar esta incidencia?')) r
 function cancelIncident() { incEdit = null; viewWizard(); }
 
 /* --- Revisión / borrador --- */
+function pendientes() { return cur.stages.reduce((a, s) => a + s.items.filter((it) => it.ok === null).length, 0); }
 function viewReview() {
   const m = metrics(cur);
-  app.innerHTML = topbar('', 'viewWizard()') + `<div class="wrap">
+  const totalItems = cur.stages.reduce((a, s) => a + s.items.length, 0);
+  const pend = pendientes();
+  const conc = cur.concepto || 'aprobado';
+  const co = (k) => `<label class="crow"><input type="radio" name="rconc" value="${k}" ${conc === k ? 'checked' : ''} onchange="onConcepto()"> ${esc(CONCEPTOS[k])}</label>`;
+  app.innerHTML = topbar('', 'saveReviewFields();viewWizard()') + `<div class="wrap">
     <h1>Revisión del reporte</h1>
     <div class="muted">${esc(cur.header.modelo)} · ${esc(cur.folio || 'Borrador')}</div>
+    ${pend > 0 ? `<div class="warn">⚠ Faltan <b>${pend}</b> de ${totalItems} puntos por revisar. <button class="btn gold sm" style="margin-top:8px" onclick="goPending()">Ir a pendientes →</button></div>` : `<div class="okbanner">✔ Los ${totalItems} puntos fueron revisados.</div>`}
     <div class="kpis" style="margin-top:12px">
       <div class="kpi"><div class="v">${m.aprobacion}%</div><div class="l">Aprobación</div></div>
       <div class="kpi"><div class="v">${m.incidencias}</div><div class="l">Incidencias</div></div>
@@ -341,19 +352,49 @@ function viewReview() {
     </div>
     <h2>Incidencias (${cur.incidents.length})</h2>
     ${cur.incidents.map(incCard).join('') || '<p class="muted">Sin incidencias. ✅</p>'}
+    <div class="card">
+      <h2 style="margin-top:0">Concepto final</h2>
+      ${co('aprobado')}${co('observaciones')}${co('rechazado')}
+      <div id="plazoWrap" style="${conc === 'observaciones' ? '' : 'display:none'}"><label>Plazo para corregir (días)</label><input id="r_plazo" type="number" inputmode="numeric" value="${esc(cur.plazoDias || '')}" placeholder="Ej. 15"></div>
+      <label>Observaciones adicionales</label><textarea id="r_obs" placeholder="Notas generales de la entrega…">${esc(cur.observaciones || '')}</textarea>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Firma del inspector</h2>
+      ${cur.firmaInspector ? `<img src="${cur.firmaInspector}" style="max-width:240px;border-bottom:2px solid var(--ink)"><div><button class="btn g sm" style="margin-top:8px" onclick="clearInspectorSign()">Volver a firmar</button></div>` : `<canvas id="isig" class="sigpad"></canvas><div class="btnrow"><button class="btn g sm" onclick="clearPadA()">Borrar</button><button class="btn ok sm" onclick="saveInspectorSign()">Guardar firma</button></div>`}
+      <p class="muted" style="font-size:13px">${esc(cur.header.inspector || '')}</p>
+    </div>
     ${cur.publicUrl ? `<div class="card"><b>Reporte publicado:</b><div class="link" style="margin-top:6px">${esc(location.origin + cur.publicUrl)}</div>
       <div class="btnrow" style="margin-top:8px"><button class="btn g sm" onclick="copyLink()">Copiar enlace</button><a class="btn gold sm" href="${esc(cur.publicUrl)}" target="_blank">Ver reporte</a></div></div>` : ''}
   </div>
   <div class="actionbar">
-    <button class="btn g" onclick="viewWizard()">Seguir editando</button>
+    <button class="btn g" onclick="saveReviewFields();viewWizard()">Seguir editando</button>
     <button class="btn p" id="pubbtn" onclick="publish()">${cur.publicUrl ? 'Actualizar publicación' : 'Publicar reporte'}</button>
   </div>`;
-  render();
+  render(); initInspectorPad();
 }
+function onConcepto() { const v = (document.querySelector('input[name=rconc]:checked') || {}).value; const w = document.getElementById('plazoWrap'); if (w) w.style.display = v === 'observaciones' ? '' : 'none'; }
+function goPending() { saveReviewFields(); for (let i = 0; i < cur.stages.length; i++) { if (cur.stages[i].items.some((it) => it.ok === null)) { step = i; break; } } viewWizard(); }
+async function saveReviewFields() { const c = document.querySelector('input[name=rconc]:checked'); if (c) cur.concepto = c.value; const pz = document.getElementById('r_plazo'); if (pz) cur.plazoDias = pz.value; const ob = document.getElementById('r_obs'); if (ob) cur.observaciones = ob.value; await saveLocal(); }
+let _isig = { ctx: null, has: false, pad: null };
+function initInspectorPad() {
+  const pad = document.getElementById('isig'); if (!pad) return;
+  pad.width = (pad.offsetWidth || 300) * 2; pad.height = 280; const ctx = pad.getContext('2d'); ctx.scale(2, 2); ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0B1F2A';
+  _isig = { ctx, has: false, pad }; let drawing = false;
+  const pp = (e) => { const r = pad.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  pad.addEventListener('pointerdown', (e) => { e.preventDefault(); drawing = true; _isig.has = true; const p = pp(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  pad.addEventListener('pointermove', (e) => { if (!drawing) return; e.preventDefault(); const p = pp(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+  window.addEventListener('pointerup', () => { drawing = false; });
+}
+function clearPadA() { if (_isig.ctx) { _isig.ctx.clearRect(0, 0, _isig.pad.width, _isig.pad.height); _isig.has = false; } }
+async function saveInspectorSign() { if (!_isig.has) { toast('Firma dentro del recuadro'); return; } await saveReviewFields(); cur.firmaInspector = _isig.pad.toDataURL('image/png'); await saveLocal(); toast('Firma del inspector guardada'); viewReview(); }
+async function clearInspectorSign() { cur.firmaInspector = null; await saveLocal(); viewReview(); }
 function copyLink() { navigator.clipboard.writeText(location.origin + cur.publicUrl).then(() => toast('Enlace copiado')); }
 
 /* --- Publicar: sincroniza con el servidor --- */
 async function publish() {
+  await saveReviewFields();
+  const pend = pendientes();
+  if (pend > 0 && !confirm('Faltan ' + pend + ' puntos por revisar. ¿Publicar de todos modos?')) return;
   if (!online()) { toast('Necesitas conexión para publicar. El borrador está guardado.'); return; }
   const btn = $('#pubbtn'); btn.textContent = 'Publicando…'; btn.disabled = true;
   try {
@@ -389,5 +430,5 @@ async function publish() {
 window.addEventListener('online', () => { const t = $('.top .off'); if (t) viewDashboard(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 // exponer handlers usados en onclick
-Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink });
+Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA });
 TOKEN ? viewDashboard() : viewLogin();

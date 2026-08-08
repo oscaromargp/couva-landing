@@ -45,13 +45,31 @@ scp -i "$SSH_KEY" deploy/nginx.conf "${VPS}:/tmp/${BRAND}-nginx.conf"
 
 echo "▶ Desplegar contenedor detrás de Traefik"
 ssh -i "$SSH_KEY" "${VPS}" \
-  BRAND="$BRAND" DOMAIN="$DOMAIN" PROXY_NET="$PROXY_NET" CERT_RESOLVER="$CERT_RESOLVER" 'bash -s' <<'REMOTE'
+  BRAND="$BRAND" DOMAIN="$DOMAIN" PROXY_NET="$PROXY_NET" CERT_RESOLVER="$CERT_RESOLVER" REDIRECT_FROM="${REDIRECT_FROM:-}" 'bash -s' <<'REMOTE'
 set -e
 DIR="/opt/${BRAND}"
 mkdir -p "${DIR}/html"
 rm -rf "${DIR}/html"/*
 tar xzf "/tmp/${BRAND}-dist.tar.gz" -C "${DIR}/html"
 cp "/tmp/${BRAND}-nginx.conf" "${DIR}/nginx.conf"
+# Redirección 301 opcional desde un dominio viejo (preserva la ruta).
+REDIR=()
+if [ -n "${REDIRECT_FROM}" ]; then
+  RE="^https?://${REDIRECT_FROM//./\\.}/(.*)"
+  REDIR=(
+    --label "traefik.http.middlewares.${BRAND}-old.redirectregex.regex=${RE}"
+    --label "traefik.http.middlewares.${BRAND}-old.redirectregex.replacement=https://${DOMAIN}/\${1}"
+    --label "traefik.http.middlewares.${BRAND}-old.redirectregex.permanent=true"
+    --label "traefik.http.routers.${BRAND}-oldhttp.entrypoints=http"
+    --label "traefik.http.routers.${BRAND}-oldhttp.rule=Host(\`${REDIRECT_FROM}\`)"
+    --label "traefik.http.routers.${BRAND}-oldhttp.middlewares=${BRAND}-old"
+    --label "traefik.http.routers.${BRAND}-oldhttps.entrypoints=https"
+    --label "traefik.http.routers.${BRAND}-oldhttps.rule=Host(\`${REDIRECT_FROM}\`)"
+    --label "traefik.http.routers.${BRAND}-oldhttps.tls=true"
+    --label "traefik.http.routers.${BRAND}-oldhttps.tls.certresolver=${CERT_RESOLVER}"
+    --label "traefik.http.routers.${BRAND}-oldhttps.middlewares=${BRAND}-old"
+  )
+fi
 docker rm -f "${BRAND}-landing" 2>/dev/null || true
 docker run -d --name "${BRAND}-landing" --restart unless-stopped \
   --network "${PROXY_NET}" \
@@ -68,8 +86,9 @@ docker run -d --name "${BRAND}-landing" --restart unless-stopped \
   --label "traefik.http.routers.${BRAND}-https.tls=true" \
   --label "traefik.http.routers.${BRAND}-https.tls.certresolver=${CERT_RESOLVER}" \
   --label "traefik.http.services.${BRAND}.loadbalancer.server.port=80" \
+  "${REDIR[@]}" \
   nginx:1.27-alpine >/dev/null
-echo "✔ ${BRAND}-landing desplegado en https://${DOMAIN}"
+echo "✔ ${BRAND}-landing en https://${DOMAIN}${REDIRECT_FROM:+ (301 desde ${REDIRECT_FROM})}"
 docker ps --filter "name=${BRAND}-landing" --format '{{.Names}} | {{.Status}}'
 REMOTE
 

@@ -49,6 +49,7 @@ function listInsp() {
 const CAUSAS = { fabrica: 'Origen en Fábrica', transporte: 'Vibración / Transporte', montaje: 'Maniobra de Montaje / Izaje', faltante: 'Incompletitud / Omisión de Obra' };
 const CRIT = { baja: 'Baja · Detalle estético', media: 'Media · Requiere ajuste', critica: 'Crítica · Bloqueante' };
 const CRIT_COLOR = { baja: '#2f855a', media: '#b7791f', critica: '#c53030' };
+const CONCEPTOS_S = { aprobado: 'Aprobado sin observaciones', observaciones: 'Aprobado con observaciones menores', rechazado: 'Rechazado' };
 
 function metrics(insp) {
   let items = 0, ok = 0;
@@ -95,10 +96,15 @@ app.post('/api/inspections', auth, (req, res) => {
     header: b.header || {},
     stages: Array.isArray(b.stages) ? b.stages : [],
     incidents: Array.isArray(b.incidents) ? b.incidents : [],
+    concepto: b.concepto || (prev && prev.concepto) || 'aprobado',
+    plazoDias: b.plazoDias || (prev && prev.plazoDias) || '',
+    observaciones: b.observaciones != null ? b.observaciones : (prev && prev.observaciones) || '',
+    firmaInspector: b.firmaInspector || (prev && prev.firmaInspector) || '',
     createdAt: (prev && prev.createdAt) || now,
     updatedAt: now,
     publishedAt: b.status === 'publicado' ? ((prev && prev.publishedAt) || now) : (prev ? prev.publishedAt || '' : ''),
   };
+  if (prev && prev.acuse) insp.acuse = prev.acuse; // preserva la firma del cliente al re-publicar
   fs.mkdirSync(path.join(INSP_DIR, id, 'media'), { recursive: true });
   writeInsp(insp);
   res.json({ ok: true, id, folio, url: `${SITE}/r/${id}` });
@@ -201,6 +207,10 @@ function renderReport(insp) {
        <canvas id="pad" class="pad"></canvas>
        <div><button class="btn2 ghost" onclick="clearPad()">Borrar firma</button></div>
        <input id="firmaNombre" placeholder="Nombre de quien recibe"><button class="btn2 gold" onclick="firmar()">Firmar y aceptar ✍️</button></div>`;
+  const cKey = insp.concepto || 'aprobado';
+  const conceptoHtml = `<div class="concepto ${esc(cKey)}">Concepto final: <b>${esc(CONCEPTOS_S[cKey] || cKey)}</b>${cKey === 'observaciones' && insp.plazoDias ? ` · a corregir en ${esc(insp.plazoDias)} días` : ''}</div>`;
+  const obsHtml = insp.observaciones ? `<div class="obs"><b>Observaciones adicionales:</b> ${esc(insp.observaciones)}</div>` : '';
+  const inspSignHtml = insp.firmaInspector ? `<div class="acuse"><b>Firma del responsable de inspección</b><br><img class="firma" src="${esc(insp.firmaInspector)}" alt="Firma inspector"><div class="fname">${esc((insp.header || {}).inspector || '')}</div></div>` : '';
 
   const stagesDone = (insp.stages || []).map((s) => {
     const total = (s.items || []).length;
@@ -248,6 +258,12 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
 .pad{width:100%;height:150px;border:1px dashed #b6bcc3;border-radius:10px;background:#fff;touch-action:none;display:block}
 .btn2{background:var(--ink);color:#fff;border:0;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer;margin-top:8px;font-size:15px}
 .btn2.gold{background:var(--gold);color:var(--ink)}.btn2.ghost{background:#fff;color:var(--ink);border:1px solid #c9cccf}
+.concepto{margin:12px 28px 4px;padding:12px 16px;border-radius:10px;font-size:15px}
+.concepto.aprobado{background:#e9f7ef;color:#1f6b3a;border:1px solid #bfe6cd}
+.concepto.observaciones{background:#fef3c7;color:#8a5a00;border:1px solid #f2d98a}
+.concepto.rechazado{background:#fdecec;color:#b42318;border:1px solid #f3c0c0}
+.obs{margin:0 28px 4px;font-size:14px;color:#41505a}
+.fname{font-size:13px;color:#5a6570;margin-top:4px}
 .foot{padding:20px 28px;color:#8b95a0;font-size:12px;text-align:center;border-top:1px solid var(--line)}
 .bar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:10px;padding:10px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px)}
 .btn{background:var(--ink);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px}
@@ -262,6 +278,7 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
     <div><b>Modelo:</b> ${esc(h.modelo || 'COUVA')}</div>
     <div><b>N° Lote/Serie:</b> ${esc(h.serie || '—')}</div>
     <div><b>Ubicación:</b> ${esc(h.ubicacion || '—')}</div>
+    <div><b>Proveedor:</b> ${esc(h.proveedor || 'PardeSantos')}</div>
     <div><b>Cliente/Supervisor:</b> ${esc(h.cliente || '—')}</div>
     <div><b>Inspector:</b> ${esc(h.inspector || '—')}</div>
     <div><b>Fecha:</b> ${esc(h.fecha || (insp.publishedAt || '').slice(0, 10))}</div>
@@ -277,9 +294,12 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
     <div class="b rep"><b>${m.nReparar}</b> fallas a reparar · ${money(m.costoReparar)}</div>
     <div class="b fal"><b>${m.nFaltantes}</b> faltantes de obra · ${money(m.costoFaltantes)}</div>
   </div>
+  ${conceptoHtml}
+  ${obsHtml}
   ${stagesDone ? `<h2 class="sec">Etapas de control</h2><div class="stages">${stagesDone}</div>` : ''}
   <h2 class="sec">Incidencias detectadas (${inc.length})</h2>
   <div class="cards">${incCards || '<p style="color:#6b7681">Sin incidencias registradas. ✅</p>'}</div>
+  ${inspSignHtml}
   ${acuseHtml}
   <div class="foot">Generado por el sistema de inspección COUVA · PardeSantos · ${esc((insp.publishedAt || '').slice(0, 10))}</div>
 </div>
