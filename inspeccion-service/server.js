@@ -121,7 +121,7 @@ const upload = multer({
     destination: (req, file, cb) => { const d = path.join(INSP_DIR, req.params.id, 'media'); fs.mkdirSync(d, { recursive: true }); cb(null, d); },
     filename: (req, file, cb) => { const ext = (path.extname(file.originalname) || '.jpg').toLowerCase().replace(/[^.a-z0-9]/g, ''); cb(null, Date.now().toString(36) + '-' + rid(6) + ext); },
   }),
-  limits: { fileSize: 40 * 1024 * 1024 },
+  limits: { fileSize: 100 * 1024 * 1024 },
   fileFilter: (req, file, cb) => cb(null, /^(image|audio|video)\//.test(file.mimetype)),
 });
 app.post('/api/inspections/:id/media', auth, (req, res, next) => { if (!safeId(req.params.id)) return res.status(400).json({ error: 'id' }); next(); }, upload.single('file'), (req, res) => {
@@ -180,7 +180,7 @@ function renderReport(insp) {
     const videos = (i.media || []).filter((x) => x.tipo === 'video');
     const audios = (i.media || []).filter((x) => x.tipo === 'audio');
     const gal = fotos.map((f) => `<img src="${esc(f.url)}" alt="Evidencia" loading="lazy" onclick="zoom(this.src)">`).join('');
-    const vid = videos.map((v) => `<video controls preload="metadata" src="${esc(v.url)}"></video>`).join('');
+    const vid = videos.map((v, k) => `<a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Ver video${videos.length > 1 ? ' ' + (k + 1) : ''}</a>`).join('');
     const aud = audios.map((a) => `<audio controls src="${esc(a.url)}"></audio>`).join('');
     const est = i.estado && i.estado !== 'abierta' ? `<span class="est ${esc(i.estado)}">${esc(i.estado)}</span>` : '';
     return `<article class="card">
@@ -248,7 +248,9 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
 .desc,.sol{margin:4px 0;font-size:14px}.sol{color:#1a5e3a}
 .gal{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.gal img{width:120px;height:90px;object-fit:cover;border-radius:8px;cursor:zoom-in}
 .aud{margin-top:10px}.aud audio{width:100%}
-.vid{margin-top:10px}.vid video{width:100%;max-width:360px;border-radius:8px}
+.vid{margin-top:6px}.vlink{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;font-weight:600;text-decoration:none;margin:8px 8px 0 0}
+.card,.kpi,.acuse,.concepto,article,.split .b{page-break-inside:avoid;break-inside:avoid}
+.gal img{page-break-inside:avoid}
 .est{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;color:#fff;background:#2f855a}.est.reparada{background:#b7791f}.est.verificada{background:#2f855a}
 .acuse{margin:8px 28px 24px;padding:16px;border:1px solid var(--line);border-radius:12px;background:#fbfbfc}
 .acuse.signed{background:#f2fbf5;border-color:#bfe6cd}
@@ -282,6 +284,7 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
     <div><b>Cliente/Supervisor:</b> ${esc(h.cliente || '—')}</div>
     <div><b>Inspector:</b> ${esc(h.inspector || '—')}</div>
     <div><b>Fecha:</b> ${esc(h.fecha || (insp.publishedAt || '').slice(0, 10))}</div>
+    ${h.gps && h.gps.lat ? `<div><b>GPS:</b> <a href="https://maps.google.com/?q=${esc(h.gps.lat)},${esc(h.gps.lng)}" target="_blank" rel="noopener">${esc(h.gps.lat)}, ${esc(h.gps.lng)}</a>${h.gps.acc ? ` (±${esc(h.gps.acc)} m)` : ''}</div>` : ''}
   </div>
   <div class="decl">Inspección realizada bajo la norma de <b>6 etapas de control modular COUVA</b> (cimentación, estructura, envolvente, servicios MEPH, interiores y prueba dinámica).</div>
   <div class="kpis">
@@ -307,7 +310,7 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 function zoom(s){document.getElementById('lbi').src=s;document.getElementById('lb').style.display='grid';}
-function dl(){var el=document.getElementById('sheet');html2pdf().set({margin:0,filename:'Reporte-${esc(insp.folio)}.pdf',image:{type:'jpeg',quality:.95},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'pt',format:'a4'}}).from(el).save();}
+function dl(){var el=document.getElementById('sheet');var b=document.querySelector('.bar');if(b)b.style.display='none';html2pdf().set({margin:[8,8,12,8],filename:'Reporte-${esc(insp.folio)}.pdf',image:{type:'jpeg',quality:.95},html2canvas:{scale:2,useCORS:true,scrollX:0,scrollY:0,windowWidth:el.scrollWidth},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['avoid-all','css','legacy']}}).from(el).save().then(function(){if(b)b.style.display='';});}
 /* firma del cliente */
 var pad=document.getElementById('pad'),pctx,drawing=false,hasSign=false;
 if(pad){pad.width=pad.offsetWidth*2;pad.height=300;pctx=pad.getContext('2d');pctx.scale(2,2);pctx.lineWidth=2.5;pctx.lineCap='round';pctx.lineJoin='round';pctx.strokeStyle='#0B1F2A';

@@ -9,6 +9,7 @@ let cur = null;        // inspección en edición
 let step = 0;          // etapa activa del wizard
 let incEdit = null;    // incidencia en edición (o null)
 let mediaRec = null;   // MediaRecorder activo
+let _gps = null;       // ubicación GPS capturada {lat,lng,acc}
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -116,6 +117,7 @@ async function viewDashboard() {
 
 /* --- Nueva inspección: ficha de encabezado --- */
 function viewNew() {
+  _gps = null;
   const today = new Date().toISOString().slice(0, 10);
   app.innerHTML = topbar('', 'viewDashboard()') + `<div class="wrap">
     <h1>Datos de la casa</h1>
@@ -126,6 +128,8 @@ function viewNew() {
       <label>Proveedor / Fabricante</label><input id="h_proveedor" value="PardeSantos">
       <label>Cliente / Supervisor (representante de entrega)</label><input id="h_cliente" placeholder="Nombre de quien recibe">
       <label>Responsable de la inspección</label><input id="h_inspector" value="Oscar Omar Gómez">
+      <label>Ubicación GPS (dónde quedó instalada)</label>
+      <div class="btnrow"><button class="btn g sm" type="button" onclick="capturaGPS()">📍 Capturar GPS</button><span id="gps_txt" class="muted" style="align-self:center;font-size:13px">sin capturar</span></div>
       <label>Fecha</label><input id="h_fecha" type="date" value="${today}">
     </div>
     <button class="btn p" onclick="createInspection()">Comenzar recorrido guiado →</button>
@@ -133,9 +137,18 @@ function viewNew() {
   render();
 }
 async function createInspection() {
-  const header = { modelo: $('#h_modelo').value, serie: $('#h_serie').value, ubicacion: $('#h_ubicacion').value, proveedor: $('#h_proveedor').value, cliente: $('#h_cliente').value, inspector: $('#h_inspector').value, fecha: $('#h_fecha').value };
+  const header = { modelo: $('#h_modelo').value, serie: $('#h_serie').value, ubicacion: $('#h_ubicacion').value, proveedor: $('#h_proveedor').value, cliente: $('#h_cliente').value, inspector: $('#h_inspector').value, fecha: $('#h_fecha').value, gps: _gps };
   if (!header.modelo) { toast('Indica el modelo'); return; }
   cur = newInspection(header); step = 0; await saveLocal(); viewWizard();
+}
+function capturaGPS() {
+  if (!navigator.geolocation) { toast('Este dispositivo no tiene GPS'); return; }
+  toast('Obteniendo ubicación…');
+  navigator.geolocation.getCurrentPosition(
+    (p) => { _gps = { lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6), acc: Math.round(p.coords.accuracy) }; const el = $('#gps_txt'); if (el) el.textContent = _gps.lat + ', ' + _gps.lng + ' (±' + _gps.acc + ' m)'; toast('Ubicación capturada'); },
+    () => toast('No se pudo obtener el GPS (revisa permisos)'),
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+  );
 }
 async function openInspection(localId) { cur = await DB.get('inspections', localId); step = 0; if (cur.status === 'publicado') viewReview(); else viewWizard(); }
 
@@ -248,7 +261,7 @@ function onPhoto(ev) {
 }
 function onVideo(ev) {
   const file = ev.target.files[0]; if (!file) return; ev.target.value = '';
-  if (file.size > 40 * 1024 * 1024) { toast('Video muy grande (máx 40 MB). Graba uno más corto.'); return; }
+  if (file.size > 100 * 1024 * 1024) { toast('Video muy grande (máx 100 MB). Graba uno más corto.'); return; }
   (async () => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'video', file); incEdit.media.push({ localId: lid, tipo: 'video' }); renderThumbs(); toast('Video agregado'); })();
 }
 function downscale(file, max, cb) {
@@ -430,5 +443,5 @@ async function publish() {
 window.addEventListener('online', () => { const t = $('.top .off'); if (t) viewDashboard(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 // exponer handlers usados en onclick
-Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA });
+Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS });
 TOKEN ? viewDashboard() : viewLogin();
