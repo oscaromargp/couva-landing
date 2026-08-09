@@ -262,8 +262,8 @@ function viewIncidentForm(isNew) {
       <label>Causa raíz</label><select id="i_causa">${opt(CAUSAS, i.causa)}</select>
       <label>Criticidad</label><select id="i_crit">${opt(CRIT, i.criticidad)}</select>
       <label>Descripción de la falla</label>
-      <div class="row"><textarea id="i_desc" placeholder="Qué está mal…">${esc(i.descripcion)}</textarea></div>
-      <button class="btn g sm" style="margin-top:6px" onclick="dictate('i_desc')">🎙️ Dictar</button>
+      <div class="row"><textarea id="i_desc" placeholder="Qué está mal… (una nota rápida basta; la IA la mejora)">${esc(i.descripcion)}</textarea></div>
+      <div class="btnrow" style="margin-top:6px"><button class="btn g sm" style="flex:1" onclick="dictate('i_desc')">🎙️ Dictar</button><button class="btn gold sm" style="flex:1" onclick="mejorarIA()">✨ Mejorar con IA</button></div>
       <label>Propuesta de solución</label><textarea id="i_sol" placeholder="Cómo se repara…">${esc(i.solucion)}</textarea>
       <label>Cotización estimada ($)</label><input id="i_costo" type="number" inputmode="numeric" value="${esc(i.costo)}" placeholder="0">
       <label>Estado</label><select id="i_estado">${opt({ abierta: 'Abierta (detectada)', reparada: 'Reparada', verificada: 'Verificada' }, i.estado || 'abierta')}</select>
@@ -376,6 +376,59 @@ function dictate(targetId) {
   r.onresult = (e) => { const t = e.results[0][0].transcript; const el = $('#' + targetId); el.value = (el.value ? el.value + ' ' : '') + t; };
   r.onerror = () => toast('No se captó la voz');
   toast('Habla ahora…'); r.start();
+}
+
+/* --- Mejorar incidencia con IA (visión; sugiere y tú apruebas) --- */
+async function mejorarIA() {
+  if (!online()) { toast('Necesitas conexión para usar la IA'); return; }
+  const nota = $('#i_desc').value.trim();
+  const fotos = (incEdit.media || []).filter((m) => m.tipo === 'foto').slice(0, 3);
+  if (!nota && !fotos.length) { toast('Escribe una nota o agrega una foto primero'); return; }
+  toast('Analizando con IA…');
+  const images = [];
+  for (const m of fotos) { const du = await mediaToDataURL(m); if (du) images.push(du); }
+  try {
+    const r = await api('/enhance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nota, ubicacion: $('#i_ubic').value, images }) });
+    const j = await r.json();
+    if (j && j.ok) showIASuggestion(j); else toast('La IA no está disponible ahora');
+  } catch (e) { toast('Error al consultar la IA'); }
+}
+function mediaToDataURL(m) {
+  return new Promise(async (res) => {
+    try {
+      let blob = null;
+      if (m.url) blob = await (await fetch(m.url)).blob();
+      else if (m.localId) { const rec = await DB.getMedia(m.localId); blob = rec && rec.blob; }
+      if (!blob) return res(null);
+      const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => res(null); fr.readAsDataURL(blob);
+    } catch (e) { res(null); }
+  });
+}
+function showIASuggestion(j) {
+  const modal = document.createElement('div'); modal.className = 'sheet-modal';
+  modal.innerHTML = `<div class="box">
+    <h2 style="margin-top:0">✨ Sugerencia de la IA</h2>
+    <p class="muted" style="font-size:13px">Revisa y aplica lo que te sirva. Todo queda editable.</p>
+    <label>Descripción</label><div class="card" style="font-size:14px">${esc(j.descripcion || '—')}</div>
+    <label>Solución propuesta</label><div class="card" style="font-size:14px">${esc(j.solucion || '—')}</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      ${j.criticidad ? `<span class="badge ${esc(j.criticidad)}">${esc(CRIT[j.criticidad] || j.criticidad)}</span>` : ''}
+      ${j.causa ? `<span class="muted" style="font-size:13px">${esc(CAUSAS[j.causa] || j.causa)}</span>` : ''}
+      <span class="sp"></span>${j.costo_estimado ? `<b>~${money(j.costo_estimado)}</b>` : ''}
+    </div>
+    ${j.nota_ia ? `<p class="muted" style="font-size:12px;margin-top:8px">⚠ ${esc(j.nota_ia)} (estimación — ajústala)</p>` : ''}
+    <div class="btnrow" style="margin-top:14px"><button class="btn g" id="ia-cancel">Cancelar</button><button class="btn ok" id="ia-apply">Aplicar</button></div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#ia-cancel').onclick = () => modal.remove();
+  modal.querySelector('#ia-apply').onclick = () => {
+    if (j.descripcion) $('#i_desc').value = j.descripcion;
+    if (j.solucion) $('#i_sol').value = j.solucion;
+    if (j.criticidad && CRIT[j.criticidad]) $('#i_crit').value = j.criticidad;
+    if (j.causa && CAUSAS[j.causa]) $('#i_causa').value = j.causa;
+    if (j.costo_estimado) $('#i_costo').value = j.costo_estimado;
+    modal.remove(); toast('Aplicado — revisa y ajusta antes de guardar');
+  };
 }
 
 async function saveIncident() {
@@ -497,5 +550,5 @@ async function publish() {
 window.addEventListener('online', () => { const t = $('.top .off'); if (t) viewDashboard(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 // exponer handlers usados en onclick
-Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep, openFromServer, onEvidPhoto, onEvidVideo, rmEvid });
+Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep, openFromServer, onEvidPhoto, onEvidVideo, rmEvid, mejorarIA });
 TOKEN ? viewDashboard() : viewLogin();

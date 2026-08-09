@@ -36,11 +36,13 @@ rm -rf "$DIR"/* ; tar xzf /tmp/couva-inspeccion.tar.gz -C "$DIR"
 cd "$DIR"
 docker build -q -t couva-inspeccion:latest . >/dev/null
 SF=/opt/couva/inspeccion.secret; [ -f "$SF" ] || openssl rand -hex 24 > "$SF"
+OR=""; [ -f /opt/couva/openrouter.key ] && OR=$(cat /opt/couva/openrouter.key)
 docker rm -f couva-inspeccion 2>/dev/null || true
 docker run -d --name couva-inspeccion --restart unless-stopped \
   --network "$PROXY_NET" \
   -v /opt/couva/inspecciones-data:/data \
   -e "SITE_URL=https://${DOMAIN}" -e "ADMIN_USER=${ADMIN_USER}" -e "ADMIN_HASH=${ADMIN_HASH}" -e "APP_SECRET=$(cat "$SF")" \
+  ${OR:+-e OPENROUTER_API_KEY=$OR} \
   --label traefik.enable=true --label "traefik.docker.network=${PROXY_NET}" \
   --label "traefik.http.routers.pdi-http.entrypoints=http" \
   --label "traefik.http.routers.pdi-http.rule=Host(\`${DOMAIN}\`)" \

@@ -23,7 +23,7 @@ const INSP_DIR = path.join(DATA_DIR, 'inspecciones');
 fs.mkdirSync(INSP_DIR, { recursive: true });
 
 const app = express();
-app.use(express.json({ limit: '4mb' }));
+app.use(express.json({ limit: '12mb' }));
 
 /* ---------- helpers ---------- */
 const sha256 = (s) => crypto.createHash('sha256').update(String(s), 'utf8').digest('hex');
@@ -114,6 +114,39 @@ app.delete('/api/inspections/:id', auth, (req, res) => {
   if (!safeId(req.params.id)) return res.status(400).json({ error: 'id' });
   try { fs.rmSync(path.join(INSP_DIR, req.params.id + '.json'), { force: true }); fs.rmSync(path.join(INSP_DIR, req.params.id), { recursive: true, force: true }); res.json({ ok: true }); }
   catch { res.status(500).json({ error: 'del' }); }
+});
+
+/* ---------- IA: enriquecer incidencia (visión, key server-side) ---------- */
+app.post('/api/enhance', auth, async (req, res) => {
+  const OR = process.env.OPENROUTER_API_KEY;
+  if (!OR) return res.status(503).json({ error: 'ia_no_config' });
+  const { nota, ubicacion, images } = req.body || {};
+  const imgs = (Array.isArray(images) ? images : []).slice(0, 3).filter((s) => typeof s === 'string' && s.startsWith('data:image'));
+  const sys = 'Eres un INSPECTOR SENIOR de casas y módulos prefabricados COUVA (panel sándwich EPS/lana de roca, sistema expansible). '
+    + 'A partir de la NOTA del inspector y las FOTOS adjuntas, redacta de forma profesional, clara y breve en español: '
+    + '(1) una descripción de la falla y (2) una propuesta de solución concreta. Además clasifica la criticidad y la causa raíz, y da un costo estimado de reparación en pesos MXN.\n\n'
+    + 'REGLAS ESTRICTAS (blindaje):\n'
+    + '- Describe SOLO lo que la nota y las fotos respaldan. NO inventes fallas, materiales, medidas ni datos.\n'
+    + '- Si algo no es visible o no es claro, dilo explícitamente y ponlo en "nota_ia" como "verificar en sitio".\n'
+    + '- El costo es una ESTIMACIÓN de referencia (rango medio, mano de obra + material comunes en México); nunca lo presentes como definitivo.\n'
+    + '- criticidad: "baja" (estético), "media" (requiere ajuste/reparación), "critica" (bloquea la entrega o habitabilidad).\n'
+    + '- causa: "fabrica" (defecto de manufactura), "transporte" (daño por vibración/trayecto), "montaje" (izaje/nivelación/sellado), "faltante" (elemento no instalado u omitido).\n'
+    + 'Responde ÚNICAMENTE con JSON válido, sin texto extra:\n'
+    + '{"descripcion":"...","solucion":"...","criticidad":"baja|media|critica","causa":"fabrica|transporte|montaje|faltante","costo_estimado":0,"nota_ia":"..."}';
+  const content = [{ type: 'text', text: `Ubicación: ${ubicacion || '—'}\nNota del inspector: ${nota || '(sin nota, básate en las fotos)'}` }];
+  imgs.forEach((u) => content.push({ type: 'image_url', image_url: { url: u } }));
+  try {
+    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + OR, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: process.env.ENHANCE_MODEL || 'openai/gpt-4o-mini', temperature: 0.3, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys }, { role: 'user', content }] }),
+    });
+    if (!r.ok) { const t = await r.text(); console.error('[enhance] OR', r.status, t.slice(0, 200)); return res.status(502).json({ error: 'ia_error' }); }
+    const j = await r.json();
+    const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '{}';
+    let out; try { out = JSON.parse(txt); } catch { out = { descripcion: String(txt).slice(0, 1500) }; }
+    res.json({ ok: true, descripcion: out.descripcion || '', solucion: out.solucion || '', criticidad: out.criticidad || '', causa: out.causa || '', costo_estimado: Number(out.costo_estimado) || 0, nota_ia: out.nota_ia || '' });
+  } catch (e) { console.error('[enhance]', e.message); res.status(502).json({ error: 'ia_error' }); }
 });
 
 /* ---------- medios ---------- */
