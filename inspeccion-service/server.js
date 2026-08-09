@@ -70,6 +70,11 @@ function metrics(insp) {
   };
 }
 const money = (n) => '$' + (Number(n) || 0).toLocaleString('es-MX');
+async function tg(text) {
+  const T = process.env.TELEGRAM_BOT_TOKEN, C = process.env.TELEGRAM_CHAT_ID;
+  if (!T || !C) return;
+  try { await fetch(`https://api.telegram.org/bot${T}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: C, text, disable_web_page_preview: true }) }); } catch (e) {}
+}
 
 /* ---------- API ---------- */
 app.post('/api/login', (req, res) => {
@@ -78,7 +83,7 @@ app.post('/api/login', (req, res) => {
   res.status(401).json({ error: 'bad_credentials' });
 });
 app.get('/api/inspections', auth, (req, res) => {
-  res.json(listInsp().map((i) => ({ id: i.id, folio: i.folio, status: i.status, header: i.header, updatedAt: i.updatedAt, m: metrics(i) })));
+  res.json(listInsp().map((i) => ({ id: i.id, folio: i.folio, status: i.status, header: i.header, tags: i.tags || [], updatedAt: i.updatedAt, m: metrics(i) })));
 });
 app.get('/api/inspections/:id', auth, (req, res) => {
   if (!safeId(req.params.id)) return res.status(400).json({ error: 'id' });
@@ -98,6 +103,7 @@ app.post('/api/inspections', auth, (req, res) => {
     stages: Array.isArray(b.stages) ? b.stages : [],
     incidents: Array.isArray(b.incidents) ? b.incidents : [],
     evidencia: Array.isArray(b.evidencia) ? b.evidencia : (prev && prev.evidencia) || [],
+    tags: Array.isArray(b.tags) ? b.tags.slice(0, 20).map((t) => String(t).slice(0, 40)) : (prev && prev.tags) || [],
     concepto: b.concepto || (prev && prev.concepto) || 'aprobado',
     plazoDias: b.plazoDias || (prev && prev.plazoDias) || '',
     observaciones: b.observaciones != null ? b.observaciones : (prev && prev.observaciones) || '',
@@ -107,6 +113,7 @@ app.post('/api/inspections', auth, (req, res) => {
     publishedAt: b.status === 'publicado' ? ((prev && prev.publishedAt) || now) : (prev ? prev.publishedAt || '' : ''),
   };
   if (prev && prev.acuse) insp.acuse = prev.acuse; // preserva la firma del cliente al re-publicar
+  if (prev && prev.comentarios) insp.comentarios = prev.comentarios; // los comentarios los maneja el endpoint público
   fs.mkdirSync(path.join(INSP_DIR, id, 'media'), { recursive: true });
   writeInsp(insp);
   res.json({ ok: true, id, folio, url: `${SITE}/r/${id}` });
@@ -196,6 +203,30 @@ app.post('/r/:id/firma', (req, res) => {
   writeInsp(insp);
   res.json({ ok: true });
 });
+// Comentarios públicos del reporte (sin login) + aviso a Telegram
+app.post('/r/:id/comentario', (req, res) => {
+  if (!safeId(req.params.id)) return res.status(400).json({ error: 'id' });
+  const insp = readInsp(req.params.id);
+  if (!insp || insp.status !== 'publicado') return res.status(404).json({ error: 'no_disponible' });
+  const b = req.body || {};
+  if (b.hp) return res.json({ ok: true }); // honeypot anti-bot
+  const nombre = String(b.nombre || '').trim(), texto = String(b.texto || '').trim();
+  if (!nombre || !texto) return res.status(400).json({ error: 'faltan_datos' });
+  if (nombre.length > 80 || texto.length > 1000) return res.status(400).json({ error: 'muy_largo' });
+  insp.comentarios = insp.comentarios || [];
+  if (insp.comentarios.length >= 300) return res.status(429).json({ error: 'limite' });
+  const c = { id: rid(8), nombre, texto, fecha: new Date().toISOString() };
+  insp.comentarios.push(c); writeInsp(insp);
+  tg(`💬 Comentario en reporte ${insp.folio}\n👤 ${nombre}\n"${texto}"\n\n${SITE}/r/${insp.id}`);
+  res.json({ ok: true, comentario: c });
+});
+app.delete('/api/inspections/:id/comentario/:cid', auth, (req, res) => {
+  if (!safeId(req.params.id)) return res.status(400).json({ error: 'id' });
+  const insp = readInsp(req.params.id); if (!insp) return res.status(404).json({ error: 'not_found' });
+  insp.comentarios = (insp.comentarios || []).filter((c) => c.id !== req.params.cid);
+  writeInsp(insp); res.json({ ok: true });
+});
+
 // PDF del reporte: Chrome headless renderiza el HTML (sin cortes, con enlaces clicables)
 app.get('/r/:id/pdf', async (req, res) => {
   if (!safeId(req.params.id)) return res.status(404).send('No encontrado');
@@ -295,6 +326,10 @@ function renderReport(insp, pdfMode) {
     ? `<a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Ver recorrido${evVids.length > 1 ? ' ' + (k + 1) : ''} (clic para reproducir)</a>`
     : `<div class="vwrap"><video controls preload="metadata" src="${esc(v.url)}"></video><a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Abrir recorrido${evVids.length > 1 ? ' ' + (k + 1) : ''}</a></div>`).join('');
   const evidHtml = ev.length ? `<h2 class="sec">Recorrido y evidencia general</h2><div class="cards"><article class="card">${evGal ? `<div class="gal">${evGal}</div>` : ''}${evVid ? `<div class="vid">${evVid}</div>` : ''}</article></div>` : '';
+  const tagsHtml = (insp.tags && insp.tags.length) ? `<div class="tags">${insp.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : '';
+  const coms = insp.comentarios || [];
+  const comsList = coms.map((c) => `<div class="com"><div class="ch"><b>${esc(c.nombre)}</b><span class="cd">${esc((c.fecha || '').slice(0, 10))}</span></div><div class="ct">${esc(c.texto)}</div></div>`).join('');
+  const comentariosHtml = `<h2 class="sec">Comentarios (${coms.length})</h2><div class="coms">${comsList || '<p class="muted2">Aún no hay comentarios.</p>'}${pdfMode ? '' : `<div class="comform"><input id="cNombre" placeholder="Tu nombre" maxlength="80"><input type="text" id="cHp" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px"><textarea id="cTexto" placeholder="Deja tu comentario…" maxlength="1000"></textarea><button class="btn2 gold" onclick="comentar()">Publicar comentario</button></div>`}</div>`;
 
   const stagesDone = (insp.stages || []).map((s) => {
     const total = (s.items || []).length;
@@ -351,6 +386,15 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
 .concepto.rechazado{background:#fdecec;color:#b42318;border:1px solid #f3c0c0}
 .obs{margin:0 28px 4px;font-size:14px;color:#41505a}
 .fname{font-size:13px;color:#5a6570;margin-top:4px}
+.tags{margin:10px 28px 0;display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:12px;font-weight:600;background:rgba(11,31,42,.08);color:var(--ink);padding:3px 10px;border-radius:999px}
+.coms{margin:8px 28px 20px}
+.com{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.com .ch{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.com .cd{font-size:12px;color:#8b95a0}
+.com .ct{margin-top:4px;font-size:14px;color:#33414b;white-space:pre-wrap}
+.comform{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}
+.comform input,.comform textarea{width:100%;margin-bottom:8px;padding:10px;border:1px solid #c9cccf;border-radius:8px;font-size:15px;font-family:inherit}
+.comform textarea{min-height:70px;resize:vertical}
 .foot{padding:20px 28px;color:#8b95a0;font-size:12px;text-align:center;border-top:1px solid var(--line)}
 .bar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:10px;padding:10px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px)}
 .btn{background:var(--ink);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px}
@@ -378,6 +422,7 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
     <div><b>Fecha:</b> ${esc(h.fecha || (insp.publishedAt || '').slice(0, 10))}</div>
     ${h.gps && h.gps.lat ? `<div><b>GPS:</b> <a href="https://maps.google.com/?q=${esc(h.gps.lat)},${esc(h.gps.lng)}" target="_blank" rel="noopener">${esc(h.gps.lat)}, ${esc(h.gps.lng)}</a>${h.gps.acc ? ` (±${esc(h.gps.acc)} m)` : ''}</div>` : ''}
   </div>
+  ${tagsHtml}
   <div class="decl">Inspección realizada bajo la norma de <b>6 etapas de control modular COUVA</b> (cimentación, estructura, envolvente, servicios MEPH, interiores y prueba dinámica).</div>
   <div class="kpis">
     <div class="kpi"><div class="v">${m.aprobacion}%</div><div class="l">Aprobación</div></div>
@@ -397,6 +442,7 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
   <div class="cards">${incCards || '<p style="color:#6b7681">Sin incidencias registradas. ✅</p>'}</div>
   ${inspSignHtml}
   ${acuseHtml}
+  ${comentariosHtml}
   <div class="foot">Generado por el sistema de inspección COUVA · PardeSantos · ${esc((insp.publishedAt || '').slice(0, 10))}</div>
 </div>
 <div id="lb" onclick="this.style.display='none'"><img id="lbi" src=""></div>
@@ -415,6 +461,10 @@ function firmar(){var n=(document.getElementById('firmaNombre').value||'').trim(
   var data=pad.toDataURL('image/png');
   fetch(location.pathname.replace(/\\/$/,'')+'/firma',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,firma:data})})
   .then(function(r){return r.json();}).then(function(j){if(j.ok){location.reload();}else{alert('No se pudo firmar: '+(j.error||''));}}).catch(function(){alert('Error de conexión.');});}
+function comentar(){var n=(document.getElementById('cNombre').value||'').trim();var t=(document.getElementById('cTexto').value||'').trim();var hp=(document.getElementById('cHp').value||'');
+  if(!n||!t){alert('Escribe tu nombre y tu comentario.');return;}
+  fetch(location.pathname.replace(/\\/$/,'')+'/comentario',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,texto:t,hp:hp})})
+  .then(function(r){return r.json();}).then(function(j){if(j.ok){location.reload();}else{alert('No se pudo publicar: '+(j.error||''));}}).catch(function(){alert('Error de conexión.');});}
 </script>
 </body></html>`;
 }

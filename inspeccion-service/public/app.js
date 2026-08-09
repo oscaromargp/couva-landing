@@ -67,7 +67,7 @@ function newInspection(header) {
   return {
     localId: uid(), id: null, folio: null, status: 'borrador', header,
     stages: STAGES.map((s) => ({ id: s.id, nombre: s.nombre, items: s.items.map((l, i) => ({ id: s.id + '-' + i, label: l, ok: null })) })),
-    incidents: [], evidencia: [], publicUrl: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), dirty: true,
+    incidents: [], evidencia: [], tags: [], publicUrl: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), dirty: true,
   };
 }
 
@@ -98,44 +98,73 @@ async function doLogin() {
 function logout() { localStorage.removeItem('pdi_token'); TOKEN = ''; viewLogin(); }
 
 /* --- Dashboard --- */
+let dashLocs = [], dashServer = [], dashQ = '';
 async function viewDashboard() {
-  const locs = (await DB.all('inspections')).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
-  const cards = locs.map((i) => {
-    const m = metrics(i);
-    return `<div class="card tap" onclick="openInspection('${i.localId}')">
-      <div class="row"><b>${esc(i.header.modelo || 'COUVA')}</b><span class="pill ${i.status}">${i.status}</span>
-        <span class="sp"></span>${i.dirty ? '<span class="muted" style="font-size:12px">● sin sincronizar</span>' : ''}</div>
-      <div class="muted" style="font-size:14px;margin-top:4px">${esc(i.folio || 'Borrador')} · ${esc(i.header.ubicacion || 's/ubicación')}</div>
-      <div class="row" style="margin-top:8px;font-size:13px;color:var(--mut)">
-        <span>✔ ${m.aprobacion}%</span><span>⚠ ${m.incidencias} inc.</span><span>${money(m.costoTotal)}</span></div>
-    </div>`;
-  }).join('');
+  dashLocs = (await DB.all('inspections')).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
   app.innerHTML = topbar('', null, true) + `<div class="wrap">
     <div class="row"><h1>Mis inspecciones</h1><span class="sp"></span><button class="iconbtn" title="Salir" onclick="logout()">⎋</button></div>
     <button class="btn gold" onclick="viewNew()">＋ Nueva inspección</button>
-    <div style="margin-top:16px">${cards || '<p class="muted">En este dispositivo aún no hay borradores locales.</p>'}</div>
+    <input id="dashsearch" type="text" placeholder="🔎 Buscar por folio, cliente, modelo, etiqueta…" style="margin-top:12px" oninput="filterDash()" value="${esc(dashQ)}">
+    <div id="local-list" style="margin-top:12px"></div>
     <div id="server-list"></div>
   </div>`;
-  render();
-  loadServerList(locs);
+  render(); renderLocal(); loadServerList();
 }
-async function loadServerList(locs) {
-  const box = $('#server-list'); if (!box || !TOKEN || !online()) return;
-  try {
-    const list = await (await api('/inspections')).json();
-    const localIds = new Set((locs || []).map((l) => l.id).filter(Boolean));
-    const rows = (list || []).filter((s) => !localIds.has(s.id)).map((s) => `
-      <div class="card">
-        <div class="row"><b>${esc((s.header && s.header.modelo) || 'COUVA')}</b><span class="pill ${esc(s.status)}">${esc(s.status)}</span>
-          <span class="sp"></span><span class="muted" style="font-size:12px">${esc(s.m ? s.m.aprobacion + '% · ' + s.m.incidencias + ' inc.' : '')}</span></div>
-        <div class="muted" style="font-size:14px;margin-top:4px">${esc(s.folio || '')} · ${esc((s.header && s.header.ubicacion) || '')}</div>
-        <div class="btnrow" style="margin-top:8px">
-          <button class="btn p sm" onclick="openFromServer('${esc(s.id)}')">✏️ Abrir / editar</button>
-          ${s.status === 'publicado' ? `<a class="btn gold sm" href="/r/${esc(s.id)}" target="_blank" rel="noopener">Ver</a><button class="btn g sm" onclick="copyRep('${esc(s.id)}')">Enlace</button>` : ''}
-        </div>
-      </div>`).join('');
-    if (rows) box.innerHTML = '<h2 style="margin-top:22px">📡 En el servidor (otros dispositivos)</h2>' + rows;
-  } catch (e) {}
+function inspMatch(o) {
+  if (!dashQ) return true;
+  const h = o.header || {};
+  return [o.folio, h.modelo, h.ubicacion, h.cliente, (o.tags || []).join(' ')].join(' ').toLowerCase().includes(dashQ.toLowerCase());
+}
+function tagChips(tags) { return (tags && tags.length) ? `<div class="chips">${tags.map((t) => `<span class="chip2">${esc(t)}</span>`).join('')}</div>` : ''; }
+function localCard(i) {
+  const m = metrics(i);
+  return `<div class="card">
+    <div class="row tap" onclick="openInspection('${i.localId}')"><b>${esc(i.header.modelo || 'COUVA')}</b><span class="pill ${i.status}">${i.status}</span><span class="sp"></span>${i.dirty ? '<span class="muted" style="font-size:12px">● sin sincronizar</span>' : ''}</div>
+    <div class="muted" style="font-size:14px;margin-top:4px">${esc(i.folio || 'Borrador')} · ${esc(i.header.ubicacion || 's/ubicación')}</div>
+    ${tagChips(i.tags)}
+    <div class="row" style="margin-top:8px;font-size:13px;color:var(--mut)"><span>✔ ${m.aprobacion}%</span><span>⚠ ${m.incidencias} inc.</span><span>${money(m.costoTotal)}</span></div>
+    <div class="btnrow" style="margin-top:10px"><button class="btn g sm" onclick="openInspection('${i.localId}')">Abrir</button><button class="btn bad sm" onclick="delLocal('${i.localId}')">Eliminar</button></div>
+  </div>`;
+}
+function renderLocal() {
+  const box = $('#local-list'); if (!box) return;
+  const cards = dashLocs.filter(inspMatch).map(localCard).join('');
+  box.innerHTML = cards || `<p class="muted">${dashQ ? 'Sin coincidencias locales.' : 'En este dispositivo aún no hay borradores locales.'}</p>`;
+}
+function serverCard(s) {
+  const m = s.m || {};
+  return `<div class="card">
+    <div class="row"><b>${esc((s.header && s.header.modelo) || 'COUVA')}</b><span class="pill ${esc(s.status)}">${esc(s.status)}</span><span class="sp"></span><span class="muted" style="font-size:12px">${esc(m.aprobacion != null ? m.aprobacion + '% · ' + m.incidencias + ' inc.' : '')}</span></div>
+    <div class="muted" style="font-size:14px;margin-top:4px">${esc(s.folio || '')} · ${esc((s.header && s.header.ubicacion) || '')}</div>
+    ${tagChips(s.tags)}
+    <div class="btnrow" style="margin-top:8px">
+      <button class="btn p sm" onclick="openFromServer('${esc(s.id)}')">✏️ Abrir</button>
+      ${s.status === 'publicado' ? `<a class="btn gold sm" href="/r/${esc(s.id)}" target="_blank" rel="noopener">Ver</a><button class="btn g sm" onclick="copyRep('${esc(s.id)}')">Enlace</button>` : ''}
+      <button class="btn bad sm" onclick="delServer('${esc(s.id)}')">Eliminar</button>
+    </div>
+  </div>`;
+}
+function renderServer() {
+  const box = $('#server-list'); if (!box) return;
+  const localIds = new Set(dashLocs.map((l) => l.id).filter(Boolean));
+  const rows = (dashServer || []).filter((s) => !localIds.has(s.id)).filter(inspMatch).map(serverCard).join('');
+  box.innerHTML = rows ? '<h2 style="margin-top:22px">📡 En el servidor (otros dispositivos)</h2>' + rows : '';
+}
+async function loadServerList() {
+  if (!TOKEN || !online()) return;
+  try { dashServer = await (await api('/inspections')).json(); renderServer(); } catch (e) {}
+}
+function filterDash() { dashQ = ($('#dashsearch').value || '').trim(); renderLocal(); renderServer(); }
+async function delLocal(localId) {
+  if (!confirm('¿Eliminar esta inspección y sus fotos/videos? No se puede deshacer.')) return;
+  const ins = await DB.get('inspections', localId);
+  try { if (ins && ins.id && online()) await api('/inspections/' + ins.id, { method: 'DELETE' }); } catch (e) {}
+  await DB.del('inspections', localId); toast('Inspección eliminada'); viewDashboard();
+}
+async function delServer(id) {
+  if (!confirm('¿Eliminar esta inspección del servidor? No se puede deshacer.')) return;
+  try { await api('/inspections/' + id, { method: 'DELETE' }); const l = (await DB.all('inspections')).find((x) => x.id === id); if (l) await DB.del('inspections', l.localId); toast('Eliminada'); } catch (e) { toast('No se pudo'); }
+  viewDashboard();
 }
 function copyRep(id) { navigator.clipboard.writeText(location.origin + '/r/' + id).then(() => toast('Enlace copiado')); }
 async function openFromServer(id) {
@@ -482,12 +511,14 @@ function viewReview() {
       ${co('aprobado')}${co('observaciones')}${co('rechazado')}
       <div id="plazoWrap" style="${conc === 'observaciones' ? '' : 'display:none'}"><label>Plazo para corregir (días)</label><input id="r_plazo" type="number" inputmode="numeric" value="${esc(cur.plazoDias || '')}" placeholder="Ej. 15"></div>
       <label>Observaciones adicionales</label><textarea id="r_obs" placeholder="Notas generales de la entrega…">${esc(cur.observaciones || '')}</textarea>
+      <label>Etiquetas (separadas por coma)</label><input id="r_tags" type="text" value="${esc((cur.tags || []).join(', '))}" placeholder="entregada, Puerto Escondido, Familia Ramírez">
     </div>
     <div class="card">
       <h2 style="margin-top:0">Firma del inspector</h2>
       ${cur.firmaInspector ? `<img src="${cur.firmaInspector}" style="max-width:240px;border-bottom:2px solid var(--ink)"><div><button class="btn g sm" style="margin-top:8px" onclick="clearInspectorSign()">Volver a firmar</button></div>` : `<canvas id="isig" class="sigpad"></canvas><div class="btnrow"><button class="btn g sm" onclick="clearPadA()">Borrar</button><button class="btn ok sm" onclick="saveInspectorSign()">Guardar firma</button></div>`}
       <p class="muted" style="font-size:13px">${esc(cur.header.inspector || '')}</p>
     </div>
+    ${cur.comentarios && cur.comentarios.length ? `<div class="card"><h2 style="margin-top:0">Comentarios (${cur.comentarios.length})</h2>${cur.comentarios.map((c) => `<div class="com2"><div class="row"><b>${esc(c.nombre)}</b> <span class="muted" style="font-size:12px">${esc((c.fecha || '').slice(0, 10))}</span><span class="sp"></span><button class="btn bad sm" onclick="delComment('${esc(c.id)}')">✕</button></div><div class="muted" style="font-size:14px;margin-top:2px">${esc(c.texto)}</div></div>`).join('')}</div>` : ''}
     ${cur.publicUrl ? `<div class="card"><b>Reporte publicado:</b><div class="link" style="margin-top:6px">${esc(location.origin + cur.publicUrl)}</div>
       <div class="btnrow" style="margin-top:8px"><button class="btn g sm" onclick="copyLink()">Copiar enlace</button><a class="btn gold sm" href="${esc(cur.publicUrl)}" target="_blank">Ver reporte</a></div></div>` : ''}
   </div>
@@ -499,7 +530,12 @@ function viewReview() {
 }
 function onConcepto() { const v = (document.querySelector('input[name=rconc]:checked') || {}).value; const w = document.getElementById('plazoWrap'); if (w) w.style.display = v === 'observaciones' ? '' : 'none'; }
 function goPending() { saveReviewFields(); for (let i = 0; i < cur.stages.length; i++) { if (cur.stages[i].items.some((it) => it.ok === null)) { step = i; break; } } viewWizard(); }
-async function saveReviewFields() { const c = document.querySelector('input[name=rconc]:checked'); if (c) cur.concepto = c.value; const pz = document.getElementById('r_plazo'); if (pz) cur.plazoDias = pz.value; const ob = document.getElementById('r_obs'); if (ob) cur.observaciones = ob.value; await saveLocal(); }
+async function saveReviewFields() { const c = document.querySelector('input[name=rconc]:checked'); if (c) cur.concepto = c.value; const pz = document.getElementById('r_plazo'); if (pz) cur.plazoDias = pz.value; const ob = document.getElementById('r_obs'); if (ob) cur.observaciones = ob.value; const tg = document.getElementById('r_tags'); if (tg) cur.tags = tg.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 20); await saveLocal(); }
+async function delComment(cid) {
+  if (!cur.id) { toast('Publica primero'); return; }
+  if (!confirm('¿Eliminar este comentario?')) return;
+  try { await api('/inspections/' + cur.id + '/comentario/' + cid, { method: 'DELETE' }); cur.comentarios = (cur.comentarios || []).filter((c) => c.id !== cid); await DB.put('inspections', cur); toast('Comentario eliminado'); viewReview(); } catch (e) { toast('No se pudo'); }
+}
 let _isig = { ctx: null, has: false, pad: null };
 function initInspectorPad() {
   const pad = document.getElementById('isig'); if (!pad) return;
@@ -553,5 +589,5 @@ async function publish() {
 window.addEventListener('online', () => { const t = $('.top .off'); if (t) viewDashboard(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 // exponer handlers usados en onclick
-Object.assign(window, { doLogin, goHome, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep, openFromServer, onEvidPhoto, onEvidVideo, rmEvid, mejorarIA });
+Object.assign(window, { doLogin, goHome, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep, openFromServer, onEvidPhoto, onEvidVideo, rmEvid, mejorarIA, filterDash, delLocal, delServer, delComment });
 TOKEN ? viewDashboard() : viewLogin();
