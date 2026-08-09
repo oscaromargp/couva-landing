@@ -64,7 +64,7 @@ function newInspection(header) {
   return {
     localId: uid(), id: null, folio: null, status: 'borrador', header,
     stages: STAGES.map((s) => ({ id: s.id, nombre: s.nombre, items: s.items.map((l, i) => ({ id: s.id + '-' + i, label: l, ok: null })) })),
-    incidents: [], publicUrl: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), dirty: true,
+    incidents: [], evidencia: [], publicUrl: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), dirty: true,
   };
 }
 
@@ -127,13 +127,40 @@ async function loadServerList(locs) {
           <span class="sp"></span><span class="muted" style="font-size:12px">${esc(s.m ? s.m.aprobacion + '% · ' + s.m.incidencias + ' inc.' : '')}</span></div>
         <div class="muted" style="font-size:14px;margin-top:4px">${esc(s.folio || '')} · ${esc((s.header && s.header.ubicacion) || '')}</div>
         <div class="btnrow" style="margin-top:8px">
-          ${s.status === 'publicado' ? `<a class="btn gold sm" href="/r/${esc(s.id)}" target="_blank" rel="noopener">Ver reporte</a><button class="btn g sm" onclick="copyRep('${esc(s.id)}')">Copiar enlace</button>` : '<span class="muted" style="font-size:13px">Borrador en otro dispositivo</span>'}
+          <button class="btn p sm" onclick="openFromServer('${esc(s.id)}')">✏️ Abrir / editar</button>
+          ${s.status === 'publicado' ? `<a class="btn gold sm" href="/r/${esc(s.id)}" target="_blank" rel="noopener">Ver</a><button class="btn g sm" onclick="copyRep('${esc(s.id)}')">Enlace</button>` : ''}
         </div>
       </div>`).join('');
     if (rows) box.innerHTML = '<h2 style="margin-top:22px">📡 En el servidor (otros dispositivos)</h2>' + rows;
   } catch (e) {}
 }
 function copyRep(id) { navigator.clipboard.writeText(location.origin + '/r/' + id).then(() => toast('Enlace copiado')); }
+async function openFromServer(id) {
+  if (!online()) { toast('Necesitas conexión para abrir del servidor'); return; }
+  try {
+    toast('Cargando del servidor…');
+    const insp = await (await api('/inspections/' + id)).json();
+    const existing = (await DB.all('inspections')).find((x) => x.id === id);
+    cur = existing || Object.assign({}, insp, { localId: uid(), dirty: false, publicUrl: '/r/' + id });
+    cur.evidencia = cur.evidencia || [];
+    await DB.put('inspections', cur);
+    step = 0; viewReview();
+  } catch (e) { toast('No se pudo cargar del servidor'); }
+}
+/* --- Evidencia general / recorrido (nivel inspección) --- */
+function onEvidPhoto(ev) { const f = ev.target.files[0]; if (!f) return; ev.target.value = ''; downscale(f, 1600, (blob) => annotate(blob, async (out) => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'foto', out); (cur.evidencia = cur.evidencia || []).push({ localId: lid, tipo: 'foto' }); await saveLocal(); renderEvidThumbs(); toast('Foto agregada'); })); }
+function onEvidVideo(ev) { const f = ev.target.files[0]; if (!f) return; ev.target.value = ''; if (f.size > 100 * 1024 * 1024) { toast('Video muy grande (máx 100 MB)'); return; } (async () => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'video', f); (cur.evidencia = cur.evidencia || []).push({ localId: lid, tipo: 'video' }); await saveLocal(); renderEvidThumbs(); toast('Video agregado'); })(); }
+async function renderEvidThumbs() {
+  const box = $('#evid_thumbs'); if (!box) return; const parts = [];
+  for (const m of (cur.evidencia || [])) {
+    let src = m.url || ''; if (!src && m.localId) { const rec = await DB.getMedia(m.localId); if (rec) src = URL.createObjectURL(rec.blob); }
+    const key = m.localId || m.url;
+    if (m.tipo === 'video') parts.push(`<div class="t"><video src="${src}" muted playsinline style="width:76px;height:76px;object-fit:cover;border-radius:8px" onclick="this.paused?this.play():this.pause()"></video><button class="x" onclick="rmEvid('${key}')">×</button></div>`);
+    else parts.push(`<div class="t"><img src="${src}"><button class="x" onclick="rmEvid('${key}')">×</button></div>`);
+  }
+  box.innerHTML = parts.join('');
+}
+async function rmEvid(key) { cur.evidencia = (cur.evidencia || []).filter((m) => (m.localId || m.url) !== key); DB.delMedia(key).catch(() => {}); await saveLocal(); renderEvidThumbs(); }
 
 /* --- Nueva inspección: ficha de encabezado --- */
 function viewNew() {
@@ -383,6 +410,15 @@ function viewReview() {
       <div class="row"><span>🔧 ${m.nRep} fallas a reparar</span><span class="sp"></span><b>${money(m.cRep)}</b></div>
       <div class="row" style="margin-top:6px"><span>📦 ${m.nFal} faltantes de obra</span><span class="sp"></span><b>${money(m.cFal)}</b></div>
     </div>
+    <div class="card">
+      <h2 style="margin-top:0">Recorrido y evidencia general</h2>
+      <p class="muted" style="font-size:13px">Fotos y videorecorridos de la casa (no ligados a una falla específica).</p>
+      <div class="btnrow">
+        <label class="btn g sm" style="flex:1">📷 Foto<input type="file" accept="image/*" capture="environment" class="hidden" onchange="onEvidPhoto(event)"></label>
+        <label class="btn g sm" style="flex:1">🎬 Video recorrido<input type="file" accept="video/*" capture="environment" class="hidden" onchange="onEvidVideo(event)"></label>
+      </div>
+      <div class="thumbs" id="evid_thumbs"></div>
+    </div>
     <h2>Incidencias (${cur.incidents.length})</h2>
     ${cur.incidents.map(incCard).join('') || '<p class="muted">Sin incidencias. ✅</p>'}
     <div class="card">
@@ -403,7 +439,7 @@ function viewReview() {
     <button class="btn g" onclick="saveReviewFields();viewWizard()">Seguir editando</button>
     <button class="btn p" id="pubbtn" onclick="publish()">${cur.publicUrl ? 'Actualizar publicación' : 'Publicar reporte'}</button>
   </div>`;
-  render(); initInspectorPad();
+  render(); initInspectorPad(); renderEvidThumbs();
 }
 function onConcepto() { const v = (document.querySelector('input[name=rconc]:checked') || {}).value; const w = document.getElementById('plazoWrap'); if (w) w.style.display = v === 'observaciones' ? '' : 'none'; }
 function goPending() { saveReviewFields(); for (let i = 0; i < cur.stages.length; i++) { if (cur.stages[i].items.some((it) => it.ok === null)) { step = i; break; } } viewWizard(); }
@@ -423,6 +459,15 @@ async function saveInspectorSign() { if (!_isig.has) { toast('Firma dentro del r
 async function clearInspectorSign() { cur.firmaInspector = null; await saveLocal(); viewReview(); }
 function copyLink() { navigator.clipboard.writeText(location.origin + cur.publicUrl).then(() => toast('Enlace copiado')); }
 
+async function uploadMediaItem(md) {
+  if (md.url || !md.localId) return;
+  const rec = await DB.getMedia(md.localId); if (!rec) return;
+  const ext = md.tipo === 'audio' ? 'webm' : (md.tipo === 'video' ? 'mp4' : 'jpg');
+  const fd = new FormData(); fd.append('file', rec.blob, md.localId + '.' + ext);
+  const ur = await api('/inspections/' + cur.id + '/media', { method: 'POST', body: fd });
+  const uj = await ur.json(); if (uj.url) md.url = uj.url;
+}
+
 /* --- Publicar: sincroniza con el servidor --- */
 async function publish() {
   await saveReviewFields();
@@ -435,20 +480,9 @@ async function publish() {
     let payload = Object.assign({}, cur, { status: 'borrador' });
     let r = await api('/inspections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     let j = await r.json(); cur.id = j.id; cur.folio = j.folio;
-    // 2) sube medios pendientes (los que aún no tienen url)
-    for (const inc of cur.incidents) {
-      for (const md of (inc.media || [])) {
-        if (!md.url && md.localId) {
-          const rec = await DB.getMedia(md.localId);
-          if (rec) {
-            const fd = new FormData(); const ext = md.tipo === 'audio' ? 'webm' : 'jpg';
-            fd.append('file', rec.blob, md.localId + '.' + ext);
-            const ur = await api('/inspections/' + cur.id + '/media', { method: 'POST', body: fd });
-            const uj = await ur.json(); if (uj.url) md.url = uj.url;
-          }
-        }
-      }
-    }
+    // 2) sube medios pendientes (los que aún no tienen url): incidencias + evidencia
+    for (const inc of cur.incidents) for (const md of (inc.media || [])) await uploadMediaItem(md);
+    for (const md of (cur.evidencia || [])) await uploadMediaItem(md);
     // 3) publica con medios ya con URL
     payload = Object.assign({}, cur, { status: 'publicado' });
     r = await api('/inspections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -463,5 +497,5 @@ async function publish() {
 window.addEventListener('online', () => { const t = $('.top .off'); if (t) viewDashboard(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 // exponer handlers usados en onclick
-Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep });
+Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep, openFromServer, onEvidPhoto, onEvidVideo, rmEvid });
 TOKEN ? viewDashboard() : viewLogin();

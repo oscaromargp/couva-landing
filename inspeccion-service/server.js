@@ -96,6 +96,7 @@ app.post('/api/inspections', auth, (req, res) => {
     header: b.header || {},
     stages: Array.isArray(b.stages) ? b.stages : [],
     incidents: Array.isArray(b.incidents) ? b.incidents : [],
+    evidencia: Array.isArray(b.evidencia) ? b.evidencia : (prev && prev.evidencia) || [],
     concepto: b.concepto || (prev && prev.concepto) || 'aprobado',
     plazoDias: b.plazoDias || (prev && prev.plazoDias) || '',
     observaciones: b.observaciones != null ? b.observaciones : (prev && prev.observaciones) || '',
@@ -211,6 +212,11 @@ function renderReport(insp) {
   const conceptoHtml = `<div class="concepto ${esc(cKey)}">Concepto final: <b>${esc(CONCEPTOS_S[cKey] || cKey)}</b>${cKey === 'observaciones' && insp.plazoDias ? ` · a corregir en ${esc(insp.plazoDias)} días` : ''}</div>`;
   const obsHtml = insp.observaciones ? `<div class="obs"><b>Observaciones adicionales:</b> ${esc(insp.observaciones)}</div>` : '';
   const inspSignHtml = insp.firmaInspector ? `<div class="acuse"><b>Firma del responsable de inspección</b><br><img class="firma" src="${esc(insp.firmaInspector)}" alt="Firma inspector"><div class="fname">${esc((insp.header || {}).inspector || '')}</div></div>` : '';
+  const ev = insp.evidencia || [];
+  const evGal = ev.filter((m) => (m.tipo || 'foto') === 'foto').map((f) => `<img src="${esc(f.url)}" alt="Evidencia" loading="lazy" onclick="zoom(this.src)">`).join('');
+  const evVids = ev.filter((m) => m.tipo === 'video');
+  const evVid = evVids.map((v, k) => `<a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Ver recorrido${evVids.length > 1 ? ' ' + (k + 1) : ''}</a>`).join('');
+  const evidHtml = ev.length ? `<h2 class="sec">Recorrido y evidencia general</h2><div class="cards"><article class="card">${evGal ? `<div class="gal">${evGal}</div>` : ''}${evVid ? `<div class="vid">${evVid}</div>` : ''}</article></div>` : '';
 
   const stagesDone = (insp.stages || []).map((s) => {
     const total = (s.items || []).length;
@@ -300,6 +306,7 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
   ${conceptoHtml}
   ${obsHtml}
   ${stagesDone ? `<h2 class="sec">Etapas de control</h2><div class="stages">${stagesDone}</div>` : ''}
+  ${evidHtml}
   <h2 class="sec">Incidencias detectadas (${inc.length})</h2>
   <div class="cards">${incCards || '<p style="color:#6b7681">Sin incidencias registradas. ✅</p>'}</div>
   ${inspSignHtml}
