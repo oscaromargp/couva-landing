@@ -126,7 +126,7 @@ const upload = multer({
 });
 app.post('/api/inspections/:id/media', auth, (req, res, next) => { if (!safeId(req.params.id)) return res.status(400).json({ error: 'id' }); next(); }, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'no_file' });
-  res.json({ url: `/media/${req.params.id}/${req.file.filename}` });
+  res.json({ url: `/media/${req.params.id}/media/${req.file.filename}` });
 });
 app.use('/media', express.static(INSP_DIR, { maxAge: '30d', immutable: true, index: false }));
 
@@ -142,7 +142,7 @@ app.post('/r/:id/firma', (req, res) => {
   if (buf.length > 600 * 1024) return res.status(413).json({ error: 'firma_grande' });
   const dir = path.join(INSP_DIR, insp.id, 'media'); fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'firma.png'), buf);
-  insp.acuse = { nombre: String(nombre).slice(0, 120), fecha: new Date().toISOString(), url: `/media/${insp.id}/firma.png` };
+  insp.acuse = { nombre: String(nombre).slice(0, 120), fecha: new Date().toISOString(), url: `/media/${insp.id}/media/firma.png` };
   writeInsp(insp);
   res.json({ ok: true });
 });

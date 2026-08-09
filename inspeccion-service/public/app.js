@@ -110,10 +110,30 @@ async function viewDashboard() {
   app.innerHTML = topbar('') + `<div class="wrap">
     <div class="row"><h1>Mis inspecciones</h1><span class="sp"></span><button class="iconbtn" title="Salir" onclick="logout()">⎋</button></div>
     <button class="btn gold" onclick="viewNew()">＋ Nueva inspección</button>
-    <div style="margin-top:16px">${cards || '<p class="muted">Aún no hay inspecciones. Crea la primera.</p>'}</div>
+    <div style="margin-top:16px">${cards || '<p class="muted">En este dispositivo aún no hay borradores locales.</p>'}</div>
+    <div id="server-list"></div>
   </div>`;
   render();
+  loadServerList(locs);
 }
+async function loadServerList(locs) {
+  const box = $('#server-list'); if (!box || !TOKEN || !online()) return;
+  try {
+    const list = await (await api('/inspections')).json();
+    const localIds = new Set((locs || []).map((l) => l.id).filter(Boolean));
+    const rows = (list || []).filter((s) => !localIds.has(s.id)).map((s) => `
+      <div class="card">
+        <div class="row"><b>${esc((s.header && s.header.modelo) || 'COUVA')}</b><span class="pill ${esc(s.status)}">${esc(s.status)}</span>
+          <span class="sp"></span><span class="muted" style="font-size:12px">${esc(s.m ? s.m.aprobacion + '% · ' + s.m.incidencias + ' inc.' : '')}</span></div>
+        <div class="muted" style="font-size:14px;margin-top:4px">${esc(s.folio || '')} · ${esc((s.header && s.header.ubicacion) || '')}</div>
+        <div class="btnrow" style="margin-top:8px">
+          ${s.status === 'publicado' ? `<a class="btn gold sm" href="/r/${esc(s.id)}" target="_blank" rel="noopener">Ver reporte</a><button class="btn g sm" onclick="copyRep('${esc(s.id)}')">Copiar enlace</button>` : '<span class="muted" style="font-size:13px">Borrador en otro dispositivo</span>'}
+        </div>
+      </div>`).join('');
+    if (rows) box.innerHTML = '<h2 style="margin-top:22px">📡 En el servidor (otros dispositivos)</h2>' + rows;
+  } catch (e) {}
+}
+function copyRep(id) { navigator.clipboard.writeText(location.origin + '/r/' + id).then(() => toast('Enlace copiado')); }
 
 /* --- Nueva inspección: ficha de encabezado --- */
 function viewNew() {
@@ -443,5 +463,5 @@ async function publish() {
 window.addEventListener('online', () => { const t = $('.top .off'); if (t) viewDashboard(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 // exponer handlers usados en onclick
-Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS });
+Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep });
 TOKEN ? viewDashboard() : viewLogin();
