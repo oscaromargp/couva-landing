@@ -12,6 +12,7 @@ const multer = require('multer');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const puppeteer = require('puppeteer-core');
 
 const PORT = process.env.PORT || 8080;
 const SITE = (process.env.SITE_URL || 'https://couva.oscaromargp.xyz').replace(/\/$/, '');
@@ -180,12 +181,37 @@ app.post('/r/:id/firma', (req, res) => {
   writeInsp(insp);
   res.json({ ok: true });
 });
+// PDF del reporte: Chrome headless renderiza el HTML (sin cortes, con enlaces clicables)
+app.get('/r/:id/pdf', async (req, res) => {
+  if (!safeId(req.params.id)) return res.status(404).send('No encontrado');
+  const insp = readInsp(req.params.id);
+  if (!insp || insp.status !== 'publicado') return res.status(404).send('No disponible');
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+    });
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${PORT}/r/${insp.id}?pdf=1`, { waitUntil: 'networkidle0', timeout: 60000 });
+    await page.emulateMediaType('print');
+    const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '12mm', left: '8mm', right: '8mm' } });
+    res.set('Content-Type', 'application/pdf');
+    res.set('Content-Disposition', `inline; filename="Reporte-${String(insp.folio || insp.id).replace(/[^\w.-]/g, '')}.pdf"`);
+    res.send(Buffer.from(pdf));
+  } catch (e) {
+    console.error('[pdf]', e.message);
+    res.status(500).send('No se pudo generar el PDF. Intenta de nuevo en un momento.');
+  } finally { if (browser) { try { await browser.close(); } catch {} } }
+});
 app.get('/r/:id', (req, res) => {
   res.set('X-Robots-Tag', 'noindex, nofollow');
   if (!safeId(req.params.id)) return res.status(404).send(reportShell('No encontrado', '<p>Reporte no válido.</p>'));
   const insp = readInsp(req.params.id);
   if (!insp || insp.status !== 'publicado') return res.status(404).send(reportShell('No disponible', '<p>Este reporte no existe o aún no se publica.</p>'));
-  res.send(renderReport(insp));
+  res.set('Cache-Control', 'no-store, max-age=0');
+  res.send(renderReport(insp, !!req.query.pdf));
 });
 
 app.get('/healthz', (req, res) => res.send('ok'));
@@ -205,7 +231,7 @@ function reportShell(title, body) {
 </head><body><div>${body}</div></body></html>`;
 }
 
-function renderReport(insp) {
+function renderReport(insp, pdfMode) {
   const h = insp.header || {};
   const m = metrics(insp);
   const inc = insp.incidents || [];
@@ -214,7 +240,9 @@ function renderReport(insp) {
     const videos = (i.media || []).filter((x) => x.tipo === 'video');
     const audios = (i.media || []).filter((x) => x.tipo === 'audio');
     const gal = fotos.map((f) => `<img src="${esc(f.url)}" alt="Evidencia" loading="lazy" onclick="zoom(this.src)">`).join('');
-    const vid = videos.map((v, k) => `<div class="vwrap"><video controls preload="metadata" src="${esc(v.url)}"></video><a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Abrir video${videos.length > 1 ? ' ' + (k + 1) : ''}</a></div>`).join('');
+    const vid = videos.map((v, k) => pdfMode
+      ? `<a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Ver video${videos.length > 1 ? ' ' + (k + 1) : ''} (clic para reproducir)</a>`
+      : `<div class="vwrap"><video controls preload="metadata" src="${esc(v.url)}"></video><a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Abrir video${videos.length > 1 ? ' ' + (k + 1) : ''}</a></div>`).join('');
     const aud = audios.map((a) => `<audio controls src="${esc(a.url)}"></audio>`).join('');
     const est = i.estado && i.estado !== 'abierta' ? `<span class="est ${esc(i.estado)}">${esc(i.estado)}</span>` : '';
     return `<article class="card">
@@ -248,7 +276,9 @@ function renderReport(insp) {
   const ev = insp.evidencia || [];
   const evGal = ev.filter((m) => (m.tipo || 'foto') === 'foto').map((f) => `<img src="${esc(f.url)}" alt="Evidencia" loading="lazy" onclick="zoom(this.src)">`).join('');
   const evVids = ev.filter((m) => m.tipo === 'video');
-  const evVid = evVids.map((v, k) => `<div class="vwrap"><video controls preload="metadata" src="${esc(v.url)}"></video><a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Abrir recorrido${evVids.length > 1 ? ' ' + (k + 1) : ''}</a></div>`).join('');
+  const evVid = evVids.map((v, k) => pdfMode
+    ? `<a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Ver recorrido${evVids.length > 1 ? ' ' + (k + 1) : ''} (clic para reproducir)</a>`
+    : `<div class="vwrap"><video controls preload="metadata" src="${esc(v.url)}"></video><a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Abrir recorrido${evVids.length > 1 ? ' ' + (k + 1) : ''}</a></div>`).join('');
   const evidHtml = ev.length ? `<h2 class="sec">Recorrido y evidencia general</h2><div class="cards"><article class="card">${evGal ? `<div class="gal">${evGal}</div>` : ''}${evVid ? `<div class="vid">${evVid}</div>` : ''}</article></div>` : '';
 
   const stagesDone = (insp.stages || []).map((s) => {
@@ -310,10 +340,17 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
 .bar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:10px;padding:10px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px)}
 .btn{background:var(--ink);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px}
 #lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:50;cursor:zoom-out}#lb img{max-width:94%;max-height:94%}
-@media print{.bar{display:none}body{background:#fff}.sheet{box-shadow:none;margin:0}}
+@media print{
+  .bar{display:none!important}#lb{display:none!important}
+  body{background:#fff}
+  .sheet{box-shadow:none;margin:0;max-width:100%;border-radius:0}
+  .card,.kpi,.acuse,.concepto,article,.split .b,.vwrap{break-inside:avoid;page-break-inside:avoid}
+  .vwrap video{display:none!important}
+  #acuseBox .pad,#acuseBox input,#acuseBox .btn2{display:none!important}
+}
 @media(max-width:640px){.ficha,.kpis{grid-template-columns:1fr 1fr}.split{flex-direction:column}}
 </style></head><body>
-<div class="bar"><button class="btn" onclick="dl()">⬇ Descargar PDF</button></div>
+<div class="bar"><a class="btn" href="/r/${insp.id}/pdf">⬇ Descargar PDF</a></div>
 <div class="sheet" id="sheet">
   <div class="hd"><div class="t">Reporte de Inspección Pre-Entrega</div><h1>Casa Modular ${esc(h.modelo || 'COUVA')}</h1><div class="folio">Folio ${esc(insp.folio)}</div></div>
   <div class="ficha">
@@ -348,10 +385,8 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
   <div class="foot">Generado por el sistema de inspección COUVA · PardeSantos · ${esc((insp.publishedAt || '').slice(0, 10))}</div>
 </div>
 <div id="lb" onclick="this.style.display='none'"><img id="lbi" src=""></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 function zoom(s){document.getElementById('lbi').src=s;document.getElementById('lb').style.display='grid';}
-function dl(){var el=document.getElementById('sheet');var b=document.querySelector('.bar');if(b)b.style.display='none';html2pdf().set({margin:[8,8,12,8],filename:'Reporte-${esc(insp.folio)}.pdf',image:{type:'jpeg',quality:.95},html2canvas:{scale:2,useCORS:true,scrollX:0,scrollY:0,windowWidth:el.scrollWidth},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['avoid-all','css','legacy']}}).from(el).save().then(function(){if(b)b.style.display='';});}
 /* firma del cliente */
 var pad=document.getElementById('pad'),pctx,drawing=false,hasSign=false;
 if(pad){pad.width=pad.offsetWidth*2;pad.height=300;pctx=pad.getContext('2d');pctx.scale(2,2);pctx.lineWidth=2.5;pctx.lineCap='round';pctx.lineJoin='round';pctx.strokeStyle='#0B1F2A';

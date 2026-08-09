@@ -33,14 +33,17 @@ const CONCEPTOS = { aprobado: 'Aprobado sin observaciones', observaciones: 'Apro
 
 /* ---------- utilidades UI ---------- */
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600); }
-function topbar(title, back) {
+function topbar(title, back, hideHome) {
   return `<div class="top">
-    ${back ? `<button class="iconbtn" onclick="${back}">←</button>` : ''}
+    ${back ? `<button class="iconbtn" title="Atrás" onclick="${back}">←</button>` : ''}
     <span class="brand">COU<b>VA</b> · PDI</span>
+    ${hideHome ? '' : `<button class="iconbtn" title="Ir al inicio" onclick="goHome()">🏠</button>`}
     <span class="sp"></span>
     <span class="${online() ? 'on' : 'off'}">${online() ? '● en línea' : '○ offline'}</span>
+    ${hideHome ? '' : `<button class="iconbtn" title="Salir" onclick="logout()">⎋</button>`}
   </div>`;
 }
+async function goHome() { if (cur) { try { await saveLocal(); } catch (e) {} } incEdit = null; toast('Guardado. Volviste al inicio'); viewDashboard(); }
 async function api(path, opts) {
   opts = opts || {}; opts.headers = Object.assign({ 'x-app-token': TOKEN }, opts.headers || {});
   const r = await fetch('/api' + path, opts);
@@ -75,7 +78,7 @@ function render() { window.scrollTo(0, 0); }
 
 /* --- Login --- */
 function viewLogin() {
-  app.innerHTML = topbar('') + `<div class="wrap center"><div style="width:100%;max-width:360px">
+  app.innerHTML = topbar('', null, true) + `<div class="wrap center"><div style="width:100%;max-width:360px">
     <h1>Inspección pre-entrega</h1><p class="muted">Ingresa para crear reportes.</p>
     <label>Usuario</label><input id="u" value="oscaromargp" autocomplete="username">
     <label>Contraseña</label><input id="p" type="password" autocomplete="current-password">
@@ -107,7 +110,7 @@ async function viewDashboard() {
         <span>✔ ${m.aprobacion}%</span><span>⚠ ${m.incidencias} inc.</span><span>${money(m.costoTotal)}</span></div>
     </div>`;
   }).join('');
-  app.innerHTML = topbar('') + `<div class="wrap">
+  app.innerHTML = topbar('', null, true) + `<div class="wrap">
     <div class="row"><h1>Mis inspecciones</h1><span class="sp"></span><button class="iconbtn" title="Salir" onclick="logout()">⎋</button></div>
     <button class="btn gold" onclick="viewNew()">＋ Nueva inspección</button>
     <div style="margin-top:16px">${cards || '<p class="muted">En este dispositivo aún no hay borradores locales.</p>'}</div>
@@ -550,5 +553,5 @@ async function publish() {
 window.addEventListener('online', () => { const t = $('.top .off'); if (t) viewDashboard(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 // exponer handlers usados en onclick
-Object.assign(window, { doLogin, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep, openFromServer, onEvidPhoto, onEvidVideo, rmEvid, mejorarIA });
+Object.assign(window, { doLogin, goHome, logout, viewDashboard, viewNew, createInspection, openInspection, gotoStep, mark, addIncident, editIncident, saveIncident, deleteIncident, cancelIncident, onPhoto, onVideo, toggleAudio, dictate, rmMedia, viewReview, viewWizard, publish, copyLink, onConcepto, goPending, saveReviewFields, saveInspectorSign, clearInspectorSign, clearPadA, capturaGPS, copyRep, openFromServer, onEvidPhoto, onEvidVideo, rmEvid, mejorarIA });
 TOKEN ? viewDashboard() : viewLogin();
