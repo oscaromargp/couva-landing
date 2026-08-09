@@ -163,6 +163,21 @@ app.post('/api/inspections/:id/media', auth, (req, res, next) => { if (!safeId(r
   if (!req.file) return res.status(400).json({ error: 'no_file' });
   res.json({ url: `/media/${req.params.id}/media/${req.file.filename}` });
 });
+// Fallback: si el archivo pedido no existe con esa extensión (p.ej. un .jpg que en
+// realidad es .mp4 por una re-publicación o caché vieja), redirige al archivo real
+// con el mismo nombre base. Hace el reporte a prueba de desajustes de extensión.
+app.get('/media/:id/media/:file', (req, res, next) => {
+  const { id, file } = req.params;
+  if (!safeId(id) || !/^[a-zA-Z0-9._-]+$/.test(file) || file.includes('..')) return next();
+  const dir = path.join(INSP_DIR, id, 'media');
+  if (fs.existsSync(path.join(dir, file))) return next();
+  const base = file.replace(/\.[^.]+$/, '');
+  try {
+    const alt = fs.readdirSync(dir).find((f) => f.replace(/\.[^.]+$/, '') === base && f !== file);
+    if (alt) return res.redirect(302, `/media/${id}/media/${alt}`);
+  } catch {}
+  next();
+});
 app.use('/media', express.static(INSP_DIR, { maxAge: '30d', immutable: true, index: false }));
 
 /* ---------- reporte público ---------- */
