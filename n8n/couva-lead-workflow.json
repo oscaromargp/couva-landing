@@ -225,6 +225,38 @@
       },
       "onError": "continueRegularOutput",
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://nexus.oscaromargp.xyz/api/couva-lead",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-couva-secret",
+              "value": "__NEXUS_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ nombre: $('Preparar datos').item.json.record.nombre, telefono: $('Preparar datos').item.json.record.telefono, email: $('Preparar datos').item.json.record.email, mensaje: $('Preparar datos').item.json.record.mensaje, modelo: $('Preparar datos').item.json.record.modelo, ubicacion: $('Preparar datos').item.json.record.zona, origen: ($('Preparar datos').item.json.record.cta || 'couva-web') }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        570
+      ],
+      "id": "27b3bb7b-85fb-44fc-a9ef-60a04481b26e",
+      "name": "Enviar a Nexus CRM",
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -290,6 +322,11 @@
             "node": "Alerta Telegram",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Enviar a Nexus CRM",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -310,5 +347,6 @@
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
-  }
+  },
+  "active": true
 }
