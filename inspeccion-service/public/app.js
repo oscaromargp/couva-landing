@@ -149,7 +149,7 @@ async function openFromServer(id) {
 }
 /* --- Evidencia general / recorrido (nivel inspección) --- */
 function onEvidPhoto(ev) { const f = ev.target.files[0]; if (!f) return; ev.target.value = ''; downscale(f, 1600, (blob) => annotate(blob, async (out) => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'foto', out); (cur.evidencia = cur.evidencia || []).push({ localId: lid, tipo: 'foto' }); await saveLocal(); renderEvidThumbs(); toast('Foto agregada'); })); }
-function onEvidVideo(ev) { const f = ev.target.files[0]; if (!f) return; ev.target.value = ''; if (f.size > 100 * 1024 * 1024) { toast('Video muy grande (máx 100 MB)'); return; } (async () => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'video', f); (cur.evidencia = cur.evidencia || []).push({ localId: lid, tipo: 'video' }); await saveLocal(); renderEvidThumbs(); toast('Video agregado'); })(); }
+function onEvidVideo(ev) { const f = ev.target.files[0]; if (!f) return; ev.target.value = ''; if (f.size > 200 * 1024 * 1024) { toast('Video muy grande (máx 200 MB)'); return; } (async () => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'video', f); (cur.evidencia = cur.evidencia || []).push({ localId: lid, tipo: 'video' }); await saveLocal(); renderEvidThumbs(); toast('Video agregado'); })(); }
 async function renderEvidThumbs() {
   const box = $('#evid_thumbs'); if (!box) return; const parts = [];
   for (const m of (cur.evidencia || [])) {
@@ -308,7 +308,7 @@ function onPhoto(ev) {
 }
 function onVideo(ev) {
   const file = ev.target.files[0]; if (!file) return; ev.target.value = '';
-  if (file.size > 100 * 1024 * 1024) { toast('Video muy grande (máx 100 MB). Graba uno más corto.'); return; }
+  if (file.size > 200 * 1024 * 1024) { toast('Video muy grande (máx 200 MB). Graba uno más corto.'); return; }
   (async () => { const lid = uid(); await DB.putMedia(lid, cur.localId, 'video', file); incEdit.media.push({ localId: lid, tipo: 'video' }); renderThumbs(); toast('Video agregado'); })();
 }
 function downscale(file, max, cb) {

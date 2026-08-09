@@ -155,7 +155,7 @@ const upload = multer({
     destination: (req, file, cb) => { const d = path.join(INSP_DIR, req.params.id, 'media'); fs.mkdirSync(d, { recursive: true }); cb(null, d); },
     filename: (req, file, cb) => { const ext = (path.extname(file.originalname) || '.jpg').toLowerCase().replace(/[^.a-z0-9]/g, ''); cb(null, Date.now().toString(36) + '-' + rid(6) + ext); },
   }),
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 200 * 1024 * 1024 },
   fileFilter: (req, file, cb) => cb(null, /^(image|audio|video)\//.test(file.mimetype)),
 });
 app.post('/api/inspections/:id/media', auth, (req, res, next) => { if (!safeId(req.params.id)) return res.status(400).json({ error: 'id' }); next(); }, upload.single('file'), (req, res) => {
@@ -214,7 +214,7 @@ function renderReport(insp) {
     const videos = (i.media || []).filter((x) => x.tipo === 'video');
     const audios = (i.media || []).filter((x) => x.tipo === 'audio');
     const gal = fotos.map((f) => `<img src="${esc(f.url)}" alt="Evidencia" loading="lazy" onclick="zoom(this.src)">`).join('');
-    const vid = videos.map((v, k) => `<a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Ver video${videos.length > 1 ? ' ' + (k + 1) : ''}</a>`).join('');
+    const vid = videos.map((v, k) => `<div class="vwrap"><video controls preload="metadata" src="${esc(v.url)}"></video><a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Abrir video${videos.length > 1 ? ' ' + (k + 1) : ''}</a></div>`).join('');
     const aud = audios.map((a) => `<audio controls src="${esc(a.url)}"></audio>`).join('');
     const est = i.estado && i.estado !== 'abierta' ? `<span class="est ${esc(i.estado)}">${esc(i.estado)}</span>` : '';
     return `<article class="card">
@@ -248,7 +248,7 @@ function renderReport(insp) {
   const ev = insp.evidencia || [];
   const evGal = ev.filter((m) => (m.tipo || 'foto') === 'foto').map((f) => `<img src="${esc(f.url)}" alt="Evidencia" loading="lazy" onclick="zoom(this.src)">`).join('');
   const evVids = ev.filter((m) => m.tipo === 'video');
-  const evVid = evVids.map((v, k) => `<a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Ver recorrido${evVids.length > 1 ? ' ' + (k + 1) : ''}</a>`).join('');
+  const evVid = evVids.map((v, k) => `<div class="vwrap"><video controls preload="metadata" src="${esc(v.url)}"></video><a class="vlink" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Abrir recorrido${evVids.length > 1 ? ' ' + (k + 1) : ''}</a></div>`).join('');
   const evidHtml = ev.length ? `<h2 class="sec">Recorrido y evidencia general</h2><div class="cards"><article class="card">${evGal ? `<div class="gal">${evGal}</div>` : ''}${evVid ? `<div class="vid">${evVid}</div>` : ''}</article></div>` : '';
 
   const stagesDone = (insp.stages || []).map((s) => {
@@ -287,7 +287,8 @@ h2.sec{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b768
 .desc,.sol{margin:4px 0;font-size:14px}.sol{color:#1a5e3a}
 .gal{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.gal img{width:120px;height:90px;object-fit:cover;border-radius:8px;cursor:zoom-in}
 .aud{margin-top:10px}.aud audio{width:100%}
-.vid{margin-top:6px}.vlink{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;font-weight:600;text-decoration:none;margin:8px 8px 0 0}
+.vid{margin-top:6px}.vlink{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;font-weight:600;text-decoration:none;margin:8px 8px 0 0;font-size:13px}
+.vwrap{margin-top:10px}.vwrap video{width:100%;max-width:440px;border-radius:10px;display:block;background:#000}.vwrap .vlink{margin-top:6px}
 .card,.kpi,.acuse,.concepto,article,.split .b{page-break-inside:avoid;break-inside:avoid}
 .gal img{page-break-inside:avoid}
 .est{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;color:#fff;background:#2f855a}.est.reparada{background:#b7791f}.est.verificada{background:#2f855a}
